@@ -3,6 +3,7 @@ package rpc
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 
 	"github.com/jaanek/jeth/httpclient"
@@ -26,18 +27,35 @@ func NewEndpoint(url string) RpcEndpoint {
 }
 
 type RpcRequest struct {
-	Id      uint     `json:"id"`
-	Version string   `json:"jsonrpc"`
-	Method  string   `json:"method"`
-	Params  []string `json:"params"`
+	Id      uint          `json:"id"`
+	Version string        `json:"jsonrpc"`
+	Method  string        `json:"method"`
+	Params  []interface{} `json:"params"`
 }
-type RpcResponse struct {
-	Id      uint   `json:"id"`
-	Version string `json:"jsonrpc"`
-	Result  string `json:"result"`
+type RpcResponse interface {
+	Error() *RpcError
+}
+type RpcResultStr struct {
+	Id      uint      `json:"id"`
+	Version string    `json:"jsonrpc"`
+	Result  string    `json:"result"`
+	Err     *RpcError `json:"error"`
 }
 
-func Call(ui ui.Screen, client httpclient.HttpClient, endpoint RpcEndpoint, method string, params []string) (*RpcResponse, error) {
+func (r *RpcResultStr) Error() *RpcError {
+	return r.Err
+}
+
+type RpcError struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+func (e *RpcError) Error() string {
+	return fmt.Sprintf("code: %d, message: %s", e.Code, e.Message)
+}
+
+func Call(ui ui.Screen, client httpclient.HttpClient, endpoint RpcEndpoint, method string, params []interface{}, resp RpcResponse) error {
 	payload, err := json.Marshal(&RpcRequest{
 		Id:      1,
 		Version: "2.0",
@@ -45,21 +63,24 @@ func Call(ui ui.Screen, client httpclient.HttpClient, endpoint RpcEndpoint, meth
 		Params:  params,
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
+	ui.Log(string(payload))
 	res, err := client.Post(endpoint.Url(), "application/json", bytes.NewReader(payload))
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	ui.Log(string(body))
-	var resp = RpcResponse{}
 	if err := json.Unmarshal(body, &resp); err != nil {
-		return nil, err
+		return err
 	}
-	return &resp, nil
+	if resp.Error() != nil {
+		return resp.Error()
+	}
+	return nil
 }
