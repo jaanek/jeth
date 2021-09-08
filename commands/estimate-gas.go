@@ -22,7 +22,7 @@ import (
 
 type EstimateGasParam struct {
 	From     string  `json:"from"`
-	To       string  `json:"to"`
+	To       string  `json:"to,omitempty"`
 	Value    string  `json:"value"`
 	Data     string  `json:"data"`
 	Gas      *string `json:"gas"`
@@ -34,11 +34,12 @@ func EstimateGasCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoi
 	if !ctx.IsSet(flags.FromParam.Name) {
 		return errors.New(fmt.Sprintf("Missing from address --%s", flags.FromParam.Name))
 	}
-	if !ctx.IsSet(flags.ToParam.Name) {
-		return errors.New(fmt.Sprintf("Missing to address --%s", flags.ToParam.Name))
+	var toAddr *common.Address
+	if ctx.IsSet(flags.ToParam.Name) {
+		to := common.BytesToAddress(hexutil.MustDecode(ctx.String(flags.ToParam.Name)))
+		toAddr = &to
 	}
 	fromAddr := common.BytesToAddress(hexutil.MustDecode(ctx.String(flags.FromParam.Name)))
-	toAddr := common.BytesToAddress(hexutil.MustDecode(ctx.String(flags.ToParam.Name)))
 	var valbig *big.Int
 	if ctx.IsSet(flags.ValueParam.Name) {
 		var ok bool
@@ -74,15 +75,18 @@ func EstimateGasCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoi
 	return nil
 }
 
-func EstimateGas(term ui.Screen, endpoint rpc.RpcEndpoint, from common.Address, to common.Address, value *uint256.Int, data []byte, tag BlockPositionTag) (*uint256.Int, error) {
-	client := httpclient.NewDefault(term)
-	resp := rpc.RpcResultStr{}
-	err := rpc.Call(term, client, endpoint, "eth_estimateGas", []interface{}{EstimateGasParam{
+func EstimateGas(term ui.Screen, endpoint rpc.RpcEndpoint, from common.Address, to *common.Address, value *uint256.Int, data []byte, tag BlockPositionTag) (*uint256.Int, error) {
+	estimateGasParams := EstimateGasParam{
 		From:  from.Hex(),
-		To:    to.Hex(),
 		Value: value.Hex(),
 		Data:  hexutil.Encode(data),
-	}, tag}, &resp)
+	}
+	if to != nil {
+		estimateGasParams.To = to.Hex()
+	}
+	client := httpclient.NewDefault(term)
+	resp := rpc.RpcResultStr{}
+	err := rpc.Call(term, client, endpoint, "eth_estimateGas", []interface{}{estimateGasParams, tag}, &resp)
 	if err != nil {
 		return nil, err
 	}

@@ -62,9 +62,21 @@ var (
 		Name:  "data",
 		Usage: "A hexadecimal data for tx",
 	}
+	DeployParam = cli.StringFlag{
+		Name:  "deploy",
+		Usage: "Provide constructor params",
+	}
+	BinParam = cli.StringFlag{
+		Name:  "bin",
+		Usage: "Binary data in hex",
+	}
+	BinFileParam = cli.StringFlag{
+		Name:  "bin-file",
+		Usage: "Binary data in hex from file",
+	}
 	MethodParam = cli.StringFlag{
 		Name:  "method",
-		Usage: "A method call",
+		Usage: "A method call with params",
 	}
 	Param0 = cli.StringFlag{
 		Name:  "0",

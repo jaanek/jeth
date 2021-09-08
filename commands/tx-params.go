@@ -1,10 +1,12 @@
 package commands
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -26,7 +28,7 @@ type TransactionParams struct {
 	Endpoint       rpc.RpcEndpoint
 	ChainId        *uint256.Int
 	From           common.Address
-	To             common.Address
+	To             *common.Address
 	Value          *uint256.Int
 	Data           []byte
 	GasTip         *uint256.Int
@@ -57,11 +59,18 @@ func TransactionParamsCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Rpc
 	if !ctx.IsSet(flags.FromParam.Name) {
 		return errors.New(fmt.Sprintf("Missing from address --%s", flags.FromParam.Name))
 	}
-	if !ctx.IsSet(flags.ToParam.Name) {
+	fromAddr := common.BytesToAddress(hexutil.MustDecode(ctx.String(flags.FromParam.Name)))
+	var toAddr *common.Address
+	if ctx.IsSet(flags.ToParam.Name) {
+		to := common.BytesToAddress(hexutil.MustDecode(ctx.String(flags.ToParam.Name)))
+		toAddr = &to
+	}
+	if !ctx.IsSet(flags.DeployParam.Name) && toAddr == nil {
 		return errors.New(fmt.Sprintf("Missing to address --%s", flags.ToParam.Name))
 	}
-	fromAddr := common.BytesToAddress(hexutil.MustDecode(ctx.String(flags.FromParam.Name)))
-	toAddr := common.BytesToAddress(hexutil.MustDecode(ctx.String(flags.ToParam.Name)))
+	if ctx.IsSet(flags.DeployParam.Name) && toAddr != nil {
+		return errors.New(fmt.Sprintf("to address --%s not accepted when we deploy", flags.ToParam.Name))
+	}
 	var valbig *big.Int
 	if ctx.IsSet(flags.ValueParam.Name) {
 		var ok bool
@@ -92,49 +101,63 @@ func TransactionParamsCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Rpc
 		if len(typeNames) == 0 {
 			return errors.New(errMsg)
 		}
-		var argTypes = make([]abi.Argument, 0, len(typeNames))
-		for _, argTypeName := range typeNames {
-			argType, err := abi.NewType(argTypeName, "", nil) // example: "uint256"
-			if err != nil {
-				return fmt.Errorf("method --%s contains invalid type: %s. Error: %w", flags.MethodParam.Name, argTypeName, err)
-			}
-			arg := abi.Argument{
-				Name:    "amount",
-				Type:    argType,
-				Indexed: false,
-			}
-			argTypes = append(argTypes, arg)
+		argTypes, err := getArgTypes(typeNames, flags.MethodParam)
+		if err != nil {
+			return err
 		}
 		method := abi.NewMethod(methodName, methodName, abi.Function, "", false, false, argTypes, nil)
-		// parse provided method parameters against their types
-		params := []interface{}{}
-		for i, input := range method.Inputs {
-			paramName := strconv.FormatInt(int64(i), 10)
-			if !ctx.IsSet(paramName) {
-				return fmt.Errorf("method argument --%s not set", paramName)
-			}
-			arg := ctx.String(paramName)
-			param, err := abipack.ToGoType(input.Type, arg)
-			if err != nil {
-				return err
-			}
-			params = append(params, param)
+		params, err := parseParamsFromInput(ctx, method.Inputs)
+		if err != nil {
+			return err
 		}
 		packedArgs, err := method.Inputs.Pack(params...)
 		if err != nil {
 			return err
 		}
-		packed, err := append(method.ID, packedArgs...), nil
-		if err != nil {
-			return err
+		data = append(method.ID, packedArgs...)
+	} else if ctx.IsSet(flags.DeployParam.Name) {
+		var bin []byte
+		if ctx.IsSet(flags.BinParam.Name) {
+			var err error
+			bin, err = hex.DecodeString(ctx.String(flags.BinParam.Name))
+			if err != nil {
+				return err
+			}
+		} else if ctx.IsSet(flags.BinFileParam.Name) {
+			data, err := os.ReadFile(ctx.String(flags.BinFileParam.Name))
+			if err != nil {
+				return err
+			}
+			bin, err = hex.DecodeString(string(data))
+			if err != nil {
+				return err
+			}
+		} else {
+			return errors.New(fmt.Sprintf("Missing contract binary (init code) --%s", flags.BinParam.Name))
 		}
-		data = packed
-		term.Print(fmt.Sprintf("packed data: %x", data))
+		var packedArgs []byte
+		typeNames := strings.Split(ctx.String(flags.DeployParam.Name), ",")
+		if len(typeNames) > 0 {
+			argTypes, err := getArgTypes(typeNames, flags.DeployParam)
+			if err != nil {
+				return err
+			}
+			constructor := abi.NewMethod("", "", abi.Constructor, "", false, false, argTypes, nil)
+			params, err := parseParamsFromInput(ctx, constructor.Inputs)
+			if err != nil {
+				return err
+			}
+			packedArgs, err = constructor.Inputs.Pack(params...)
+			if err != nil {
+				return err
+			}
+		}
+		data = append(bin, packedArgs...)
 	}
 
 	// either value or data needs to be specified
 	if valbig == nil && len(data) == 0 {
-		return errors.New(fmt.Sprintf("Either --%s, --%s or %s needs to be specifed", flags.ValueParam.Name, flags.DataParam.Name, flags.MethodParam.Name))
+		return errors.New(fmt.Sprintf("Either --%s, --%s, %s or %s needs to be specifed", flags.ValueParam.Name, flags.DataParam.Name, flags.MethodParam.Name, flags.DeployParam.Name))
 	}
 	value := new(uint256.Int)
 	if valbig != nil {
@@ -179,7 +202,6 @@ func TransactionParamsCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Rpc
 		RpcUrl:         p.Endpoint.Url(),
 		ChainId:        p.ChainId.Hex(),
 		From:           p.From.Hex(),
-		To:             p.To.Hex(),
 		Value:          p.Value.Hex(),
 		Data:           hexutil.Encode(data),
 		GasPrice:       p.GasPrice.Hex(),
@@ -187,6 +209,9 @@ func TransactionParamsCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Rpc
 		TxCount:        p.TxCount.Hex(),
 		TxCountPending: p.TxCountPending.Hex(),
 		Balance:        p.Balance.Hex(),
+	}
+	if p.To != nil {
+		out.To = p.To.Hex()
 	}
 	if p.GasTip != nil {
 		out.GasTip = p.GasTip.Hex()
@@ -199,7 +224,7 @@ func TransactionParamsCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Rpc
 	return nil
 }
 
-func GetTransactionParams(term ui.Screen, endpoint rpc.RpcEndpoint, from common.Address, to common.Address, value *uint256.Int, data []byte, tag BlockPositionTag) (*TransactionParams, error) {
+func GetTransactionParams(term ui.Screen, endpoint rpc.RpcEndpoint, from common.Address, to *common.Address, value *uint256.Int, data []byte, tag BlockPositionTag) (*TransactionParams, error) {
 	var wg sync.WaitGroup
 	var errs = make(chan error, 7)
 	var chainId, gasTip, gasPrice, gas *uint256.Int
@@ -301,4 +326,42 @@ func GetTransactionParams(term ui.Screen, endpoint rpc.RpcEndpoint, from common.
 		TxCountPending: txCountPending,
 		Balance:        fromBalance,
 	}, nil
+}
+
+func getArgTypes(typeNames []string, flag cli.StringFlag) ([]abi.Argument, error) {
+	var argTypes = make([]abi.Argument, 0, len(typeNames))
+	for _, argTypeName := range typeNames {
+		if len(argTypeName) == 0 {
+			continue
+		}
+		argType, err := abi.NewType(argTypeName, "", nil) // example: "uint256"
+		if err != nil {
+			return nil, fmt.Errorf("argument in --%s contains invalid type: %s. Error: %w", flag.Name, argTypeName, err)
+		}
+		arg := abi.Argument{
+			Name:    "",
+			Type:    argType,
+			Indexed: false,
+		}
+		argTypes = append(argTypes, arg)
+	}
+	return argTypes, nil
+}
+
+// parse provided method parameters against their types
+func parseParamsFromInput(ctx *cli.Context, inputs abi.Arguments) ([]interface{}, error) {
+	params := []interface{}{}
+	for i, input := range inputs {
+		paramName := strconv.FormatInt(int64(i), 10)
+		if !ctx.IsSet(paramName) {
+			return nil, fmt.Errorf("argument --%s not set", paramName)
+		}
+		arg := ctx.String(paramName)
+		param, err := abipack.ToGoType(input.Type, arg)
+		if err != nil {
+			return nil, err
+		}
+		params = append(params, param)
+	}
+	return params, nil
 }
