@@ -54,19 +54,19 @@ func EstimateGasCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoi
 	} else {
 		valbig = new(big.Int)
 	}
-	var input = []byte{}
-	if ctx.IsSet(flags.InputParam.Name) {
-		input = hexutil.MustDecode(ctx.String(flags.InputParam.Name))
+	var data = []byte{}
+	if ctx.IsSet(flags.DataParam.Name) {
+		data = hexutil.MustDecode(ctx.String(flags.DataParam.Name))
 	}
-	// either value or input needs to be specified
-	if valbig.Cmp(new(big.Int)) == 0 && len(input) == 0 {
-		return errors.New(fmt.Sprintf("Either --%s or --%s needs to be specifed", flags.ValueParam.Name, flags.InputParam.Name))
+	// either value or data needs to be specified
+	if valbig.Cmp(new(big.Int)) == 0 && len(data) == 0 {
+		return errors.New(fmt.Sprintf("Either --%s or --%s needs to be specifed", flags.ValueParam.Name, flags.DataParam.Name))
 	}
 	value := new(uint256.Int)
 	value.SetFromBig(valbig)
 
 	// call
-	gas, err := EstimateGas(term, endpoint, fromAddr, toAddr, value, input, "latest")
+	gas, err := EstimateGas(term, endpoint, fromAddr, toAddr, value, data, "latest")
 	if err != nil {
 		return err
 	}
@@ -74,14 +74,14 @@ func EstimateGasCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoi
 	return nil
 }
 
-func EstimateGas(term ui.Screen, endpoint rpc.RpcEndpoint, from common.Address, to common.Address, value *uint256.Int, input []byte, tag BlockPositionTag) (*uint256.Int, error) {
+func EstimateGas(term ui.Screen, endpoint rpc.RpcEndpoint, from common.Address, to common.Address, value *uint256.Int, data []byte, tag BlockPositionTag) (*uint256.Int, error) {
 	client := httpclient.NewDefault(term)
 	resp := rpc.RpcResultStr{}
 	err := rpc.Call(term, client, endpoint, "eth_estimateGas", []interface{}{EstimateGasParam{
 		From:  from.Hex(),
 		To:    to.Hex(),
 		Value: value.Hex(),
-		Data:  hexutil.Encode(input),
+		Data:  hexutil.Encode(data),
 	}, tag}, &resp)
 	if err != nil {
 		return nil, err

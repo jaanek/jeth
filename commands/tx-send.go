@@ -43,7 +43,7 @@ func SendTransactionCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEn
 	if tx.GetChainID().Cmp(endpointChainId) != 0 {
 		return errors.New(fmt.Sprintf("endpoint chain-id: %v not same as tx chain-id: %v", endpointChainId, tx.GetChainID()))
 	}
-	term.Print(fmt.Sprintf("Sending tx to: %s", endpoint.Url()))
+	term.Print(fmt.Sprintf("Sending tx to: %s (nonce: %d, gas: %d)", endpoint.Url(), tx.GetNonce(), tx.GetGas()))
 	term.Logf("gas: %v\n", tx.GetGas())
 	term.Logf("gasPrice: %v\n", tx.GetPrice())
 
@@ -60,7 +60,7 @@ func SendTransactionCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEn
 	if err != nil {
 		return err
 	}
-	term.Print(fmt.Sprintf("Received receipt: %v", receipt))
+	term.Print(fmt.Sprintf("Received receipt: %+v", receipt))
 	return nil
 }
 

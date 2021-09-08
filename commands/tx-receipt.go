@@ -80,27 +80,30 @@ func GetTransactionReceipt(term ui.Screen, endpoint rpc.RpcEndpoint, txHash stri
 }
 
 func WaitTransactionReceipt(ctx context.Context, term ui.Screen, endpoint rpc.RpcEndpoint, txHash string) (*TxReceipt, error) {
+	waitTicker := time.NewTicker(time.Second)
+	defer waitTicker.Stop()
+
 	logEvery := time.NewTicker(5 * time.Second)
 	defer logEvery.Stop()
 
 	var blockNumber *uint256.Int
 	for {
+		receipt, err := GetTransactionReceipt(term, endpoint, txHash)
+		if err != nil {
+			return nil, err
+		}
+		if receipt != nil {
+			return receipt, nil
+		}
+		blockNumber, _ = BlockNumber(term, endpoint)
 		select {
 		case <-ctx.Done():
+			return nil, ctx.Err()
 		case <-logEvery.C:
 			if blockNumber != nil {
 				term.Print(fmt.Sprintf("block number: %s", blockNumber))
 			}
-		default:
-			receipt, err := GetTransactionReceipt(term, endpoint, txHash)
-			if err != nil {
-				return nil, err
-			}
-			if receipt != nil {
-				return receipt, nil
-			}
-			blockNumber, _ = BlockNumber(term, endpoint)
-			time.Sleep(2 * time.Second)
+		case <-waitTicker.C:
 		}
 	}
 }

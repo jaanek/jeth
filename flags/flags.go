@@ -58,8 +58,52 @@ var (
 		Name:  "value-gwei",
 		Usage: "indicate that provided --value is in gwei and not in wei",
 	}
-	InputParam = cli.StringFlag{
-		Name:  "input",
-		Usage: "A hexadecimal input data for tx",
+	DataParam = cli.StringFlag{
+		Name:  "data",
+		Usage: "A hexadecimal data for tx",
+	}
+	MethodParam = cli.StringFlag{
+		Name:  "method",
+		Usage: "A method call",
+	}
+	Param0 = cli.StringFlag{
+		Name:  "0",
+		Usage: "",
+	}
+	Param1 = cli.StringFlag{
+		Name:  "1",
+		Usage: "",
+	}
+	Param2 = cli.StringFlag{
+		Name:  "2",
+		Usage: "",
+	}
+	Param3 = cli.StringFlag{
+		Name:  "3",
+		Usage: "",
+	}
+	Param4 = cli.StringFlag{
+		Name:  "4",
+		Usage: "",
+	}
+	Param5 = cli.StringFlag{
+		Name:  "5",
+		Usage: "",
+	}
+	Param6 = cli.StringFlag{
+		Name:  "6",
+		Usage: "",
+	}
+	Param7 = cli.StringFlag{
+		Name:  "7",
+		Usage: "",
+	}
+	Param8 = cli.StringFlag{
+		Name:  "8",
+		Usage: "",
+	}
+	Param9 = cli.StringFlag{
+		Name:  "9",
+		Usage: "",
 	}
 )
