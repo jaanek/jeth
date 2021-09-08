@@ -21,6 +21,7 @@ require (
 	github.com/ledgerwatch/secp256k1 v0.0.0-20210626115225-cd5cd00ed72d // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-isatty v0.0.13 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/quasilyte/go-ruleguard/dsl v0.3.6 // indirect
 	github.com/russross/blackfriday/v2 v2.0.1 // indirect
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect

@@ -31,7 +31,7 @@ func GetAccountBalanceCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Rpc
 	if err != nil {
 		return err
 	}
-	if ctx.IsSet(flags.FlagVerbose.Name) {
+	if ctx.IsSet(flags.Verbose.Name) {
 		term.Output(fmt.Sprintf("%s: %v\n", input, balance))
 		return nil
 	}

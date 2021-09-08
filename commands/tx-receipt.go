@@ -89,7 +89,7 @@ func WaitTransactionReceipt(ctx context.Context, term ui.Screen, endpoint rpc.Rp
 		case <-ctx.Done():
 		case <-logEvery.C:
 			if blockNumber != nil {
-				term.Print(fmt.Sprintf("block number: %s\n", blockNumber))
+				term.Print(fmt.Sprintf("block number: %s", blockNumber))
 			}
 		default:
 			receipt, err := GetTransactionReceipt(term, endpoint, txHash)

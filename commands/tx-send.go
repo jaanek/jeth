@@ -18,27 +18,20 @@ import (
 )
 
 func SendTransactionCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoint) error {
-	// try to read transaction from std input
-	var stdInStr string
-	if ctx.IsSet(flags.StdIn.Name) {
-		stdInStr = StdInReadAll()
-		fmt.Printf("All input: %s\n", string(stdInStr))
-	}
-
 	// validate input
-	var input string
-	if ctx.IsSet(flags.HexParam.Name) && stdInStr == "" {
-		input = ctx.String(flags.HexParam.Name)
-	} else if stdInStr != "" {
-		input = stdInStr
+	var rawTxStr string
+	if ctx.IsSet(flags.TxParam.Name) {
+		rawTxStr = ctx.String(flags.TxParam.Name)
+	} else if flags.FlagRawTx != nil && *flags.FlagRawTx != "" {
+		rawTxStr = *flags.FlagRawTx
 	} else {
-		return errors.New(fmt.Sprintf("Missing signed tx in hex --%s", flags.HexParam.Name))
+		return errors.New(fmt.Sprintf("Missing signed tx in --%s", flags.TxParam.Name))
 	}
-	data, err := hexutil.Decode(input)
+	rawTx, err := hexutil.Decode(rawTxStr)
 	if err != nil {
 		return err
 	}
-	tx, err := types.DecodeTransaction(rlp.NewStream(bytes.NewReader(data), uint64(len(data))))
+	tx, err := types.DecodeTransaction(rlp.NewStream(bytes.NewReader(rawTx), uint64(len(rawTx))))
 	if err != nil {
 		return err
 	}
@@ -50,22 +43,24 @@ func SendTransactionCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEn
 	if tx.GetChainID().Cmp(endpointChainId) != 0 {
 		return errors.New(fmt.Sprintf("endpoint chain-id: %v not same as tx chain-id: %v", endpointChainId, tx.GetChainID()))
 	}
+	term.Print(fmt.Sprintf("Sending tx to: %s", endpoint.Url()))
 	term.Logf("gas: %v\n", tx.GetGas())
 	term.Logf("gasPrice: %v\n", tx.GetPrice())
 
 	// send tx
-	hash, err := SendTransaction(term, endpoint, input)
+	hash, err := SendTransaction(term, endpoint, rawTxStr)
 	if err != nil {
 		return err
 	}
+	term.Print(fmt.Sprintf("Sent tx. Hash: %s Waiting for confirmation...", hash))
+
 	// wait for tx receipt
 	c, _ := context.WithTimeout(context.Background(), 120*time.Second)
 	receipt, err := WaitTransactionReceipt(c, term, endpoint, hash)
 	if err != nil {
 		return err
 	}
-	term.Output(fmt.Sprintf("hash: %s\n", hash))
-	term.Output(fmt.Sprintf("receipt: %v\n", receipt))
+	term.Print(fmt.Sprintf("Received receipt: %v", receipt))
 	return nil
 }
 
