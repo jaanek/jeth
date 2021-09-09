@@ -19,10 +19,10 @@ type HashedMethod struct {
 
 func NewHashedMethod(methodName string, argTypes abi.Arguments) HashedMethod {
 	var types = make([]string, len(argTypes))
-	method := HashedMethod{}
 	for i, input := range argTypes {
 		types[i] = input.Type.String()
 	}
+	method := HashedMethod{}
 	method.Sig = fmt.Sprintf("%v(%v)", methodName, strings.Join(types, ","))
 	sig := crypto.Keccak256([]byte(method.Sig))[:4]
 	copy(method.Id[:], sig)

@@ -78,6 +78,10 @@ var (
 		Name:  "method",
 		Usage: "A method call with params",
 	}
+	OutputTypesParam = cli.StringFlag{
+		Name:  "out",
+		Usage: "Output types, example: --out=uint256,address",
+	}
 	Param0 = cli.StringFlag{
 		Name:  "0",
 		Usage: "",

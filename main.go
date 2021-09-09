@@ -184,6 +184,33 @@ func init() {
 				flags.Param9,
 			},
 		},
+		{
+			Name:   "call",
+			Usage:  "call method",
+			Action: rpcCommand(commands.CallMethodCommand),
+			Flags: []cli.Flag{
+				flags.Verbose,
+				flags.RpcUrl,
+				flags.FromParam,
+				flags.ToParam,
+				flags.ValueParam,
+				flags.ValueInEthParam,
+				flags.ValueInGweiParam,
+				flags.Plain,
+				flags.MethodParam,
+				flags.OutputTypesParam,
+				flags.Param0,
+				flags.Param1,
+				flags.Param2,
+				flags.Param3,
+				flags.Param4,
+				flags.Param5,
+				flags.Param6,
+				flags.Param7,
+				flags.Param8,
+				flags.Param9,
+			},
+		},
 	}
 }
 

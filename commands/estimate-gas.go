@@ -23,10 +23,10 @@ import (
 type EstimateGasParam struct {
 	From     string  `json:"from"`
 	To       string  `json:"to,omitempty"`
-	Value    string  `json:"value"`
+	Value    string  `json:"value,omitempty"`
 	Data     string  `json:"data"`
-	Gas      *string `json:"gas"`
-	GasPrice *string `json:"gasPrice"`
+	Gas      *string `json:"gas,omitempty"`
+	GasPrice *string `json:"gasPrice,omitempty"`
 }
 
 func EstimateGasCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoint) error {
