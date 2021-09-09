@@ -7,12 +7,10 @@ import (
 	"fmt"
 	"math/big"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/holiman/uint256"
-	"github.com/jaanek/jeth/abipack"
 	"github.com/jaanek/jeth/flags"
 	"github.com/jaanek/jeth/rpc"
 	"github.com/jaanek/jeth/ui"
@@ -101,20 +99,12 @@ func TransactionParamsCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Rpc
 		if len(typeNames) == 0 {
 			return errors.New(errMsg)
 		}
-		argTypes, err := getArgTypes(typeNames, flags.MethodParam)
+		argTypes, packedValues, err := abiPackedValuesFromCli(ctx, typeNames)
 		if err != nil {
 			return err
 		}
-		method := abi.NewMethod(methodName, methodName, abi.Function, "", false, false, argTypes, nil)
-		params, err := parseParamsFromInput(ctx, method.Inputs)
-		if err != nil {
-			return err
-		}
-		packedArgs, err := method.Inputs.Pack(params...)
-		if err != nil {
-			return err
-		}
-		data = append(method.ID, packedArgs...)
+		method := NewHashedMethod(methodName, argTypes)
+		data = append(method.Id[:], packedValues...)
 	} else if ctx.IsSet(flags.DeployParam.Name) {
 		var bin []byte
 		if ctx.IsSet(flags.BinParam.Name) {
@@ -135,24 +125,16 @@ func TransactionParamsCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Rpc
 		} else {
 			return errors.New(fmt.Sprintf("Missing contract binary (init code) --%s", flags.BinParam.Name))
 		}
-		var packedArgs []byte
+		var packedValues []byte
 		typeNames := strings.Split(ctx.String(flags.DeployParam.Name), ",")
 		if len(typeNames) > 0 {
-			argTypes, err := getArgTypes(typeNames, flags.DeployParam)
-			if err != nil {
-				return err
-			}
-			constructor := abi.NewMethod("", "", abi.Constructor, "", false, false, argTypes, nil)
-			params, err := parseParamsFromInput(ctx, constructor.Inputs)
-			if err != nil {
-				return err
-			}
-			packedArgs, err = constructor.Inputs.Pack(params...)
+			var err error
+			_, packedValues, err = abiPackedValuesFromCli(ctx, typeNames)
 			if err != nil {
 				return err
 			}
 		}
-		data = append(bin, packedArgs...)
+		data = append(bin, packedValues...)
 	}
 
 	// either value or data needs to be specified
@@ -328,40 +310,15 @@ func GetTransactionParams(term ui.Screen, endpoint rpc.RpcEndpoint, from common.
 	}, nil
 }
 
-func getArgTypes(typeNames []string, flag cli.StringFlag) ([]abi.Argument, error) {
-	var argTypes = make([]abi.Argument, 0, len(typeNames))
-	for _, argTypeName := range typeNames {
-		if len(argTypeName) == 0 {
-			continue
-		}
-		argType, err := abi.NewType(argTypeName, "", nil) // example: "uint256"
-		if err != nil {
-			return nil, fmt.Errorf("argument in --%s contains invalid type: %s. Error: %w", flag.Name, argTypeName, err)
-		}
-		arg := abi.Argument{
-			Name:    "",
-			Type:    argType,
-			Indexed: false,
-		}
-		argTypes = append(argTypes, arg)
+func abiPackedValuesFromCli(ctx *cli.Context, typeNames []string) (abi.Arguments, []byte, error) {
+	argTypes, err := AbiTypesFromStrings(typeNames)
+	if err != nil {
+		return nil, nil, err
 	}
-	return argTypes, nil
-}
-
-// parse provided method parameters against their types
-func parseParamsFromInput(ctx *cli.Context, inputs abi.Arguments) ([]interface{}, error) {
-	params := []interface{}{}
-	for i, input := range inputs {
-		paramName := strconv.FormatInt(int64(i), 10)
-		if !ctx.IsSet(paramName) {
-			return nil, fmt.Errorf("argument --%s not set", paramName)
-		}
-		arg := ctx.String(paramName)
-		param, err := abipack.ToGoType(input.Type, arg)
-		if err != nil {
-			return nil, err
-		}
-		params = append(params, param)
+	argValues, err := AbiValuesFromCli(ctx, argTypes)
+	if err != nil {
+		return nil, nil, err
 	}
-	return params, nil
+	packedValues, err := AbiPackValues(argTypes, argValues)
+	return argTypes, packedValues, err
 }
