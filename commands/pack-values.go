@@ -15,7 +15,7 @@ import (
 type PackedValuesOutput struct {
 	MethodSig    string `json:"methodSig"`
 	MethodHashed string `json:"methodHashed"`
-	PackedValues string `json:packedValues`
+	PackedValues string `json:"packedValues"`
 }
 
 func PackValuesCommand(term ui.Screen, ctx *cli.Context) error {

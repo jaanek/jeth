@@ -35,9 +35,17 @@ func ToGoType(t abi.Type, input string) (interface{}, error) {
 	case abi.BoolTy:
 		return readBool(input)
 	case abi.AddressTy:
-		return common.BytesToAddress([]byte(input)), nil
+		b, err := hexutil.Decode(input)
+		if err != nil {
+			return nil, err
+		}
+		return common.BytesToAddress(b), nil
 	case abi.HashTy:
-		return common.BytesToHash([]byte(input)), nil
+		b, err := hexutil.Decode(input)
+		if err != nil {
+			return nil, err
+		}
+		return common.BytesToHash(b), nil
 	case abi.BytesTy:
 		return hexutil.Decode(input)
 	case abi.FixedBytesTy:
