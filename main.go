@@ -164,6 +164,26 @@ func init() {
 				flags.HexParam,
 			},
 		},
+		{
+			Name:   "pack-values",
+			Usage:  "packs method values",
+			Action: runCommand(commands.PackValuesCommand),
+			Flags: []cli.Flag{
+				flags.Verbose,
+				flags.Plain,
+				flags.MethodParam,
+				flags.Param0,
+				flags.Param1,
+				flags.Param2,
+				flags.Param3,
+				flags.Param4,
+				flags.Param5,
+				flags.Param6,
+				flags.Param7,
+				flags.Param8,
+				flags.Param9,
+			},
+		},
 	}
 }
 

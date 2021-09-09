@@ -37,7 +37,7 @@ type TransactionParams struct {
 	Balance        *uint256.Int
 }
 
-type Output struct {
+type TransactionParamsOutput struct {
 	RpcUrl         string `json:"rpcUrl"`
 	ChainId        string `json:"chainId"`
 	From           string `json:"from"`
@@ -88,7 +88,7 @@ func TransactionParamsCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Rpc
 	if ctx.IsSet(flags.DataParam.Name) {
 		data = hexutil.MustDecode(ctx.String(flags.DataParam.Name))
 	} else if ctx.IsSet(flags.MethodParam.Name) {
-		errMsg := fmt.Sprintf("Method call needs to be specified in format (example): --%s=transfer:uint256,address", flags.MethodParam.Name)
+		errMsg := fmt.Sprintf("Method call needs to be specified in format (example): --%s=transfer:address,uint256", flags.MethodParam.Name)
 		methodStr := ctx.String(flags.MethodParam.Name)
 		methodSplit := strings.Split(methodStr, ":")
 		if len(methodSplit) != 2 {
@@ -180,7 +180,7 @@ func TransactionParamsCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Rpc
 			term.Print(fmt.Sprintf("balance: %v (%s eth/ftm or chain native currency)", p.Balance, balanceInEth))
 		}
 	}
-	out := Output{
+	out := TransactionParamsOutput{
 		RpcUrl:         p.Endpoint.Url(),
 		ChainId:        p.ChainId.Hex(),
 		From:           p.From.Hex(),
