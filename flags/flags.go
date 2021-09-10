@@ -122,4 +122,8 @@ var (
 		Name:  "9",
 		Usage: "",
 	}
+	NoTip = cli.BoolFlag{
+		Name:  "no-tip",
+		Usage: "output no gasTip param",
+	}
 )

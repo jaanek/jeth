@@ -17,6 +17,7 @@ type HashedMethod struct {
 	Id  [4]byte
 }
 
+// https://docs.soliditylang.org/en/develop/abi-spec.html
 func NewHashedMethod(methodName string, argTypes abi.Arguments) HashedMethod {
 	var types = make([]string, len(argTypes))
 	for i, input := range argTypes {

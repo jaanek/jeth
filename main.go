@@ -104,6 +104,7 @@ func init() {
 				flags.Param7,
 				flags.Param8,
 				flags.Param9,
+				flags.NoTip,
 			},
 		},
 		{

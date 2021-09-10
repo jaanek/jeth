@@ -44,7 +44,7 @@ type TransactionParamsOutput struct {
 	To             string `json:"to"`
 	Value          string `json:"value"`
 	Data           string `json:"data"`
-	GasTip         string `json:"gasTip"`
+	GasTip         string `json:"gasTip,omitempty"`
 	GasPrice       string `json:"gasPrice"`
 	Gas            string `json:"gas"`
 	TxCount        string `json:"txCount"`
@@ -84,6 +84,7 @@ func TransactionParamsCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Rpc
 	}
 
 	// check data or method call
+	// https://docs.soliditylang.org/en/develop/abi-spec.html
 	var data = []byte{}
 	if ctx.IsSet(flags.DataParam.Name) {
 		data = hexutil.MustDecode(ctx.String(flags.DataParam.Name))
@@ -154,11 +155,12 @@ func TransactionParamsCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Rpc
 
 	// output results
 	if ctx.IsSet(flags.Plain.Name) {
+		valueInGwei := new(uint256.Int).Div(p.Value, new(uint256.Int).SetUint64(params.GWei))
 		term.Print(fmt.Sprintf("rpcUrl: %s", p.Endpoint))
 		term.Print(fmt.Sprintf("chainId: %s", p.ChainId))
 		term.Print(fmt.Sprintf("from: %s", p.From))
 		term.Print(fmt.Sprintf("to: %s", p.To))
-		term.Print(fmt.Sprintf("value: %s wei", p.Value))
+		term.Print(fmt.Sprintf("value: %s wei (%s gwei) (%.9f eth/ftm)", p.Value, valueInGwei, float64(valueInGwei.Uint64())/1e9))
 		term.Print(fmt.Sprintf("data: %x", p.Data))
 		if p.GasTip != nil {
 			gasTipInGwei := new(uint256.Int).Div(p.GasTip, new(uint256.Int).SetUint64(params.GWei))
@@ -195,7 +197,7 @@ func TransactionParamsCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Rpc
 	if p.To != nil {
 		out.To = p.To.Hex()
 	}
-	if p.GasTip != nil {
+	if p.GasTip != nil && ctx.Bool(flags.NoTip.Name) == false {
 		out.GasTip = p.GasTip.Hex()
 	}
 	b, err := json.Marshal(&out)
