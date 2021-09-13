@@ -171,12 +171,12 @@ func TransactionParamsCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Rpc
 			gasPriceInGwei := new(uint256.Int).Div(p.GasPrice, new(uint256.Int).SetUint64(params.GWei))
 			term.Print(fmt.Sprintf("gasPrice: %s wei (%s gwei)", p.GasPrice, gasPriceInGwei))
 		}
-		term.Print(fmt.Sprintf("gas: %d", p.Gas))
+		term.Print(fmt.Sprintf("gas: %d", *p.Gas))
 		if p.TxCount != nil {
-			term.Print(fmt.Sprintf("txCountLatest: %d", p.TxCount))
+			term.Print(fmt.Sprintf("txCountLatest: %d", *p.TxCount))
 		}
 		if p.TxCountPending != nil {
-			term.Print(fmt.Sprintf("txCountPending: %d", p.TxCountPending))
+			term.Print(fmt.Sprintf("txCountPending: %d", *p.TxCountPending))
 		}
 		if p.Balance != nil {
 			balanceInEth := new(uint256.Int).Div(p.Balance, new(uint256.Int).SetUint64(params.Ether))
@@ -187,13 +187,15 @@ func TransactionParamsCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Rpc
 		RpcUrl:         p.Endpoint.Url(),
 		ChainId:        p.ChainId.Hex(),
 		From:           p.From.Hex(),
-		Value:          p.Value.Hex(),
 		Data:           hexutil.Encode(data),
 		GasPrice:       p.GasPrice.Hex(),
 		Gas:            strconv.FormatUint(*p.Gas, 16),
 		TxCount:        strconv.FormatUint(*p.TxCount, 16),
 		TxCountPending: strconv.FormatUint(*p.TxCountPending, 16),
 		Balance:        p.Balance.Hex(),
+	}
+	if p.Value != nil {
+		out.Value = p.Value.Hex()
 	}
 	if p.To != nil {
 		out.To = p.To.Hex()

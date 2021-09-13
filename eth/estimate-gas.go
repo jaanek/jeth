@@ -76,17 +76,19 @@ func EstimateGasCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoi
 }
 
 func EstimateGas(term ui.Screen, endpoint rpc.RpcEndpoint, from common.Address, to *common.Address, value *uint256.Int, data []byte, tag BlockPositionTag) (*uint64, error) {
-	estimateGasParams := EstimateGasParam{
-		From:  from.Hex(),
-		Value: value.Hex(),
-		Data:  hexutil.Encode(data),
+	params := EstimateGasParam{
+		From: from.Hex(),
+		Data: hexutil.Encode(data),
+	}
+	if value != nil {
+		params.Value = value.Hex()
 	}
 	if to != nil {
-		estimateGasParams.To = to.Hex()
+		params.To = to.Hex()
 	}
 	client := httpclient.NewDefault(term)
 	resp := rpc.RpcResultStr{}
-	err := rpc.Call(term, client, endpoint, "eth_estimateGas", []interface{}{estimateGasParams, tag}, &resp)
+	err := rpc.Call(term, client, endpoint, "eth_estimateGas", []interface{}{params, tag}, &resp)
 	if err != nil {
 		return nil, err
 	}
