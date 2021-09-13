@@ -48,7 +48,7 @@ func SendTransactionCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEn
 	term.Logf("gasPrice: %v\n", tx.GetPrice())
 
 	// send tx
-	hash, err := SendTransaction(term, endpoint, rawTxStr)
+	hash, err := SendTransaction(term, endpoint, rawTx)
 	if err != nil {
 		return err
 	}
@@ -65,10 +65,11 @@ func SendTransactionCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEn
 }
 
 // returns tx hash
-func SendTransaction(term ui.Screen, endpoint rpc.RpcEndpoint, rawSignedTx string) (string, error) {
+func SendTransaction(term ui.Screen, endpoint rpc.RpcEndpoint, rawSignedTx []byte) (string, error) {
+	tx := hexutil.Encode(rawSignedTx)
 	client := httpclient.NewDefault(term)
 	resp := rpc.RpcResultStr{}
-	err := rpc.Call(term, client, endpoint, "eth_sendRawTransaction", StringsToInterfaces([]string{rawSignedTx}), &resp)
+	err := rpc.Call(term, client, endpoint, "eth_sendRawTransaction", StringsToInterfaces([]string{tx}), &resp)
 	if err != nil {
 		return "", err
 	}
