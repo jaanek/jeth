@@ -1,4 +1,4 @@
-package commands
+package eth
 
 import (
 	"errors"
@@ -15,6 +15,19 @@ import (
 type HashedMethod struct {
 	Sig string
 	Id  [4]byte
+}
+
+func AbiPackedMethodCall(methodName string, types []string, values []string) ([]byte, error) {
+	argTypes, err := AbiTypesFromStrings(types)
+	if err != nil {
+		return nil, err
+	}
+	packedValues, err := AbiPackValues(argTypes, values)
+	if err != nil {
+		return nil, err
+	}
+	method := NewHashedMethod(methodName, argTypes)
+	return append(method.Id[:], packedValues...), nil
 }
 
 // https://docs.soliditylang.org/en/develop/abi-spec.html
@@ -65,7 +78,7 @@ func AbiTypesFromStrings(typeNames []string) (abi.Arguments, error) {
 // parse provided method parameters against their types
 func AbiValuesFromTypes(inputs abi.Arguments, values []string) ([]interface{}, error) {
 	if len(values) != len(inputs) {
-		return nil, errors.New("abi input's len != values len")
+		return nil, errors.New("abi arg type's len != values len")
 	}
 	params := []interface{}{}
 	for i, input := range inputs {

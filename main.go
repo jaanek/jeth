@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jaanek/jeth/commands"
+	"github.com/jaanek/jeth/eth"
 	"github.com/jaanek/jeth/flags"
 	"github.com/jaanek/jeth/rpc"
 	"github.com/jaanek/jeth/ui"
@@ -37,7 +37,7 @@ func init() {
 			Name:    "chain-id",
 			Aliases: []string{"chain"},
 			Usage:   "returns the chain id of endpoint",
-			Action:  rpcCommand(commands.ChainIdCommand),
+			Action:  rpcCommand(eth.ChainIdCommand),
 			Flags: []cli.Flag{
 				flags.Verbose,
 				flags.RpcUrl,
@@ -48,7 +48,7 @@ func init() {
 			Name:    "block-number",
 			Aliases: []string{"bn"},
 			Usage:   "returns the number of most recent block",
-			Action:  rpcCommand(commands.BlockNumberCommand),
+			Action:  rpcCommand(eth.BlockNumberCommand),
 			Flags: []cli.Flag{
 				flags.Verbose,
 				flags.RpcUrl,
@@ -58,7 +58,7 @@ func init() {
 			Name:    "gas-price",
 			Aliases: []string{"gp"},
 			Usage:   "returns the current price per gas in wei",
-			Action:  rpcCommand(commands.GasPriceCommand),
+			Action:  rpcCommand(eth.GasPriceCommand),
 			Flags: []cli.Flag{
 				flags.Verbose,
 				flags.RpcUrl,
@@ -68,7 +68,7 @@ func init() {
 		{
 			Name:   "tip",
 			Usage:  "returns a suggestion for a gas tip cap for dynamic fee transactions",
-			Action: rpcCommand(commands.MaxPriorityFeePerGasCommand),
+			Action: rpcCommand(eth.MaxPriorityFeePerGasCommand),
 			Flags: []cli.Flag{
 				flags.Verbose,
 				flags.RpcUrl,
@@ -79,7 +79,7 @@ func init() {
 			Name:    "tx-params",
 			Aliases: []string{"params"},
 			Usage:   "returns transaction params, nonce, prices, gas, etc required for signing a tx",
-			Action:  rpcCommand(commands.TransactionParamsCommand),
+			Action:  rpcCommand(eth.TransactionParamsCommand),
 			Flags: []cli.Flag{
 				flags.Verbose,
 				flags.Plain,
@@ -110,7 +110,7 @@ func init() {
 		{
 			Name:   "balance",
 			Usage:  "get account balance",
-			Action: rpcCommand(commands.GetAccountBalanceCommand),
+			Action: rpcCommand(eth.GetAccountBalanceCommand),
 			Flags: []cli.Flag{
 				flags.Verbose,
 				flags.RpcUrl,
@@ -121,7 +121,7 @@ func init() {
 			Name:    "estimate-gas",
 			Aliases: []string{"estimate"},
 			Usage:   "get estimated gas used by a tx",
-			Action:  rpcCommand(commands.EstimateGasCommand),
+			Action:  rpcCommand(eth.EstimateGasCommand),
 			Flags: []cli.Flag{
 				flags.Verbose,
 				flags.RpcUrl,
@@ -137,7 +137,7 @@ func init() {
 			Name:    "tx-count",
 			Aliases: []string{"count"},
 			Usage:   "get transactions count for the from address",
-			Action:  rpcCommand(commands.TransactionsCountCommand),
+			Action:  rpcCommand(eth.TransactionsCountCommand),
 			Flags: []cli.Flag{
 				flags.Verbose,
 				flags.RpcUrl,
@@ -148,7 +148,7 @@ func init() {
 			Name:    "tx-send",
 			Aliases: []string{"send"},
 			Usage:   "sends previously signed transaction (message call or contract creation) to endpoint. Returns tx hash",
-			Action:  rpcCommand(commands.SendTransactionCommand),
+			Action:  rpcCommand(eth.SendTransactionCommand),
 			Flags: []cli.Flag{
 				flags.Verbose,
 				flags.RpcUrl,
@@ -158,7 +158,7 @@ func init() {
 		{
 			Name:   "receipt",
 			Usage:  "get transaction receipt",
-			Action: rpcCommand(commands.GetTransactionReceiptCommand),
+			Action: rpcCommand(eth.GetTransactionReceiptCommand),
 			Flags: []cli.Flag{
 				flags.Verbose,
 				flags.RpcUrl,
@@ -168,7 +168,7 @@ func init() {
 		{
 			Name:   "pack-values",
 			Usage:  "packs method values",
-			Action: runCommand(commands.PackValuesCommand),
+			Action: runCommand(eth.PackValuesCommand),
 			Flags: []cli.Flag{
 				flags.Verbose,
 				flags.Plain,
@@ -188,7 +188,7 @@ func init() {
 		{
 			Name:   "call",
 			Usage:  "call method",
-			Action: rpcCommand(commands.CallMethodCommand),
+			Action: rpcCommand(eth.CallMethodCommand),
 			Flags: []cli.Flag{
 				flags.Verbose,
 				flags.RpcUrl,
