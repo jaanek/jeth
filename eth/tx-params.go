@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -31,9 +32,9 @@ type TransactionParams struct {
 	Data           []byte
 	GasTip         *uint256.Int
 	GasPrice       *uint256.Int
-	Gas            *uint256.Int
-	TxCount        *uint256.Int
-	TxCountPending *uint256.Int
+	Gas            *uint64
+	TxCount        *uint64
+	TxCountPending *uint64
 	Balance        *uint256.Int
 }
 
@@ -170,12 +171,12 @@ func TransactionParamsCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Rpc
 			gasPriceInGwei := new(uint256.Int).Div(p.GasPrice, new(uint256.Int).SetUint64(params.GWei))
 			term.Print(fmt.Sprintf("gasPrice: %s wei (%s gwei)", p.GasPrice, gasPriceInGwei))
 		}
-		term.Print(fmt.Sprintf("gas: %s", p.Gas))
+		term.Print(fmt.Sprintf("gas: %d", p.Gas))
 		if p.TxCount != nil {
-			term.Print(fmt.Sprintf("txCountLatest: %s", p.TxCount))
+			term.Print(fmt.Sprintf("txCountLatest: %d", p.TxCount))
 		}
 		if p.TxCountPending != nil {
-			term.Print(fmt.Sprintf("txCountPending: %s", p.TxCountPending))
+			term.Print(fmt.Sprintf("txCountPending: %d", p.TxCountPending))
 		}
 		if p.Balance != nil {
 			balanceInEth := new(uint256.Int).Div(p.Balance, new(uint256.Int).SetUint64(params.Ether))
@@ -189,9 +190,9 @@ func TransactionParamsCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Rpc
 		Value:          p.Value.Hex(),
 		Data:           hexutil.Encode(data),
 		GasPrice:       p.GasPrice.Hex(),
-		Gas:            p.Gas.Hex(),
-		TxCount:        p.TxCount.Hex(),
-		TxCountPending: p.TxCountPending.Hex(),
+		Gas:            strconv.FormatUint(*p.Gas, 16),
+		TxCount:        strconv.FormatUint(*p.TxCount, 16),
+		TxCountPending: strconv.FormatUint(*p.TxCountPending, 16),
 		Balance:        p.Balance.Hex(),
 	}
 	if p.To != nil {
@@ -211,9 +212,8 @@ func TransactionParamsCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Rpc
 func GetTransactionParams(term ui.Screen, endpoint rpc.RpcEndpoint, from common.Address, to *common.Address, value *uint256.Int, data []byte, tag BlockPositionTag) (*TransactionParams, error) {
 	var wg sync.WaitGroup
 	var errs = make(chan error, 7)
-	var chainId, gasTip, gasPrice, gas *uint256.Int
-	var txCount *uint256.Int
-	var txCountPending *uint256.Int
+	var chainId, gasTip, gasPrice *uint256.Int
+	var gas, txCount, txCountPending *uint64
 	var fromBalance *uint256.Int
 
 	// trigger the rpc

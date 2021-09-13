@@ -41,12 +41,17 @@ func TransactionsCountCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Rpc
 	return nil
 }
 
-func TransactionsCount(term ui.Screen, endpoint rpc.RpcEndpoint, from common.Address, tag BlockPositionTag) (*uint256.Int, error) {
+func TransactionsCount(term ui.Screen, endpoint rpc.RpcEndpoint, from common.Address, tag BlockPositionTag) (*uint64, error) {
 	client := httpclient.NewDefault(term)
 	resp := rpc.RpcResultStr{}
 	err := rpc.Call(term, client, endpoint, "eth_getTransactionCount", []interface{}{from.Hex(), tag}, &resp)
 	if err != nil {
 		return nil, err
 	}
-	return uint256.FromHex(resp.Result)
+	val, err := uint256.FromHex(resp.Result)
+	if err != nil {
+		return nil, err
+	}
+	count := val.ToBig().Uint64()
+	return &count, nil
 }

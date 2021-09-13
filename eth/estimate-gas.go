@@ -71,11 +71,11 @@ func EstimateGasCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoi
 	if err != nil {
 		return err
 	}
-	term.Output(fmt.Sprintf("%s\n", gas))
+	term.Output(fmt.Sprintf("%d\n", gas))
 	return nil
 }
 
-func EstimateGas(term ui.Screen, endpoint rpc.RpcEndpoint, from common.Address, to *common.Address, value *uint256.Int, data []byte, tag BlockPositionTag) (*uint256.Int, error) {
+func EstimateGas(term ui.Screen, endpoint rpc.RpcEndpoint, from common.Address, to *common.Address, value *uint256.Int, data []byte, tag BlockPositionTag) (*uint64, error) {
 	estimateGasParams := EstimateGasParam{
 		From:  from.Hex(),
 		Value: value.Hex(),
@@ -90,7 +90,12 @@ func EstimateGas(term ui.Screen, endpoint rpc.RpcEndpoint, from common.Address, 
 	if err != nil {
 		return nil, err
 	}
-	return uint256.FromHex(resp.Result)
+	val, err := uint256.FromHex(resp.Result)
+	if err != nil {
+		return nil, err
+	}
+	gas := val.ToBig().Uint64()
+	return &gas, nil
 }
 
 func DecodeTransaction(input string) (types.Transaction, error) {
