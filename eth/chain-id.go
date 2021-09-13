@@ -10,7 +10,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func ChainIdCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoint) error {
+func ChainIdCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Endpoint) error {
 	chainId, err := ChainId(term, endpoint)
 	if err != nil {
 		return err
@@ -19,7 +19,7 @@ func ChainIdCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoint) 
 	return nil
 }
 
-func ChainId(term ui.Screen, endpoint rpc.RpcEndpoint) (*uint256.Int, error) {
+func ChainId(term ui.Screen, endpoint rpc.Endpoint) (*uint256.Int, error) {
 	client := httpclient.NewDefault(term)
 	resp := rpc.RpcResultStr{}
 	err := rpc.Call(term, client, endpoint, "eth_chainId", []interface{}{}, &resp)

@@ -10,7 +10,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func BlockNumberCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoint) error {
+func BlockNumberCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Endpoint) error {
 	blockNumber, err := BlockNumber(term, endpoint)
 	if err != nil {
 		return err
@@ -19,7 +19,7 @@ func BlockNumberCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoi
 	return nil
 }
 
-func BlockNumber(term ui.Screen, endpoint rpc.RpcEndpoint) (*uint256.Int, error) {
+func BlockNumber(term ui.Screen, endpoint rpc.Endpoint) (*uint256.Int, error) {
 	client := httpclient.NewDefault(term)
 	resp := rpc.RpcResultStr{}
 	err := rpc.Call(term, client, endpoint, "eth_blockNumber", []interface{}{}, &resp)

@@ -12,7 +12,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func GasPriceCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoint) error {
+func GasPriceCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Endpoint) error {
 	gasPrice, err := GasPrice(term, endpoint)
 	if err != nil {
 		return err
@@ -24,7 +24,7 @@ func GasPriceCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoint)
 	return nil
 }
 
-func GasPrice(term ui.Screen, endpoint rpc.RpcEndpoint) (*uint256.Int, error) {
+func GasPrice(term ui.Screen, endpoint rpc.Endpoint) (*uint256.Int, error) {
 	client := httpclient.NewDefault(term)
 	resp := rpc.RpcResultStr{}
 	err := rpc.Call(term, client, endpoint, "eth_gasPrice", []interface{}{}, &resp)
@@ -34,7 +34,7 @@ func GasPrice(term ui.Screen, endpoint rpc.RpcEndpoint) (*uint256.Int, error) {
 	return uint256.FromHex(resp.Result)
 }
 
-func MaxPriorityFeePerGasCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoint) error {
+func MaxPriorityFeePerGasCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Endpoint) error {
 	maxTip, err := MaxPriorityFeePerGas(term, endpoint)
 	if err != nil {
 		return err
@@ -46,7 +46,7 @@ func MaxPriorityFeePerGasCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.
 	return nil
 }
 
-func MaxPriorityFeePerGas(term ui.Screen, endpoint rpc.RpcEndpoint) (*uint256.Int, error) {
+func MaxPriorityFeePerGas(term ui.Screen, endpoint rpc.Endpoint) (*uint256.Int, error) {
 	client := httpclient.NewDefault(term)
 	resp := rpc.RpcResultStr{}
 	err := rpc.Call(term, client, endpoint, "eth_maxPriorityFeePerGas", []interface{}{}, &resp)

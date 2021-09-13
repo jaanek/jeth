@@ -14,7 +14,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func GetAccountBalanceCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoint) error {
+func GetAccountBalanceCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Endpoint) error {
 	// validate args
 	if !ctx.IsSet(flags.HexParam.Name) {
 		return errors.New(fmt.Sprintf("Missing address --%s", flags.HexParam.Name))
@@ -39,7 +39,7 @@ func GetAccountBalanceCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Rpc
 	return nil
 }
 
-func GetAccountBalance(term ui.Screen, endpoint rpc.RpcEndpoint, fromAddr common.Address) (*uint256.Int, error) {
+func GetAccountBalance(term ui.Screen, endpoint rpc.Endpoint, fromAddr common.Address) (*uint256.Int, error) {
 	client := httpclient.NewDefault(term)
 	resp := rpc.RpcResultStr{}
 	err := rpc.Call(term, client, endpoint, "eth_getBalance", StringsToInterfaces([]string{fromAddr.Hex(), "latest"}), &resp)

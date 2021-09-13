@@ -21,7 +21,7 @@ const (
 	Pending = BlockPositionTag("pending")
 )
 
-func TransactionsCountCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoint) error {
+func TransactionsCountCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Endpoint) error {
 	// validate input
 	if !ctx.IsSet(flags.HexParam.Name) {
 		return errors.New(fmt.Sprintf("Missing from address in hex --%s", flags.HexParam.Name))
@@ -41,7 +41,7 @@ func TransactionsCountCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Rpc
 	return nil
 }
 
-func TransactionsCount(term ui.Screen, endpoint rpc.RpcEndpoint, from common.Address, tag BlockPositionTag) (*uint64, error) {
+func TransactionsCount(term ui.Screen, endpoint rpc.Endpoint, from common.Address, tag BlockPositionTag) (*uint64, error) {
 	client := httpclient.NewDefault(term)
 	resp := rpc.RpcResultStr{}
 	err := rpc.Call(term, client, endpoint, "eth_getTransactionCount", []interface{}{from.Hex(), tag}, &resp)

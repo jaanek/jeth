@@ -49,7 +49,7 @@ type TxLog struct {
 	Removed          bool     `json:"removed"`
 }
 
-func GetTransactionReceiptCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoint) error {
+func GetTransactionReceiptCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Endpoint) error {
 	// validate args
 	if !ctx.IsSet(flags.HexParam.Name) {
 		return errors.New(fmt.Sprintf("Missing tx hash --%s", flags.HexParam.Name))
@@ -69,7 +69,7 @@ func GetTransactionReceiptCommand(term ui.Screen, ctx *cli.Context, endpoint rpc
 }
 
 // returns tx receipt
-func GetTransactionReceipt(term ui.Screen, endpoint rpc.RpcEndpoint, txHash string) (*TxReceipt, error) {
+func GetTransactionReceipt(term ui.Screen, endpoint rpc.Endpoint, txHash string) (*TxReceipt, error) {
 	client := httpclient.NewDefault(term)
 	resp := RpcResultTxReceipt{}
 	err := rpc.Call(term, client, endpoint, "eth_getTransactionReceipt", StringsToInterfaces([]string{txHash}), &resp)
@@ -79,7 +79,7 @@ func GetTransactionReceipt(term ui.Screen, endpoint rpc.RpcEndpoint, txHash stri
 	return resp.Result, nil
 }
 
-func WaitTransactionReceipt(ctx context.Context, term ui.Screen, endpoint rpc.RpcEndpoint, txHash string) (*TxReceipt, error) {
+func WaitTransactionReceipt(ctx context.Context, term ui.Screen, endpoint rpc.Endpoint, txHash string) (*TxReceipt, error) {
 	waitTicker := time.NewTicker(time.Second)
 	defer waitTicker.Stop()
 

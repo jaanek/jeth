@@ -29,7 +29,7 @@ type EstimateGasParam struct {
 	GasPrice *string `json:"gasPrice,omitempty"`
 }
 
-func EstimateGasCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoint) error {
+func EstimateGasCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Endpoint) error {
 	// validate args
 	if !ctx.IsSet(flags.FromParam.Name) {
 		return errors.New(fmt.Sprintf("Missing from address --%s", flags.FromParam.Name))
@@ -75,7 +75,7 @@ func EstimateGasCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoi
 	return nil
 }
 
-func EstimateGas(term ui.Screen, endpoint rpc.RpcEndpoint, from common.Address, to *common.Address, value *uint256.Int, data []byte, tag BlockPositionTag) (*uint64, error) {
+func EstimateGas(term ui.Screen, endpoint rpc.Endpoint, from common.Address, to *common.Address, value *uint256.Int, data []byte, tag BlockPositionTag) (*uint64, error) {
 	params := EstimateGasParam{
 		From: from.Hex(),
 		Data: hexutil.Encode(data),

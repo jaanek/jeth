@@ -17,7 +17,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func SendTransactionCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoint) error {
+func SendTransactionCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Endpoint) error {
 	// validate input
 	var rawTxStr string
 	if ctx.IsSet(flags.TxParam.Name) {
@@ -65,7 +65,7 @@ func SendTransactionCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEn
 }
 
 // returns tx hash
-func SendTransaction(term ui.Screen, endpoint rpc.RpcEndpoint, rawSignedTx []byte) (string, error) {
+func SendTransaction(term ui.Screen, endpoint rpc.Endpoint, rawSignedTx []byte) (string, error) {
 	tx := hexutil.Encode(rawSignedTx)
 	client := httpclient.NewDefault(term)
 	resp := rpc.RpcResultStr{}

@@ -10,20 +10,20 @@ import (
 	"github.com/jaanek/jeth/ui"
 )
 
-type endpoint struct {
+type rpcEndpoint struct {
 	url string
 }
 
-func (e *endpoint) Url() string {
+func (e *rpcEndpoint) Url() string {
 	return e.url
 }
 
-type RpcEndpoint interface {
+type Endpoint interface {
 	Url() string
 }
 
-func NewEndpoint(url string) RpcEndpoint {
-	return &endpoint{url: url}
+func NewEndpoint(url string) Endpoint {
+	return &rpcEndpoint{url: url}
 }
 
 type RpcRequest struct {
@@ -55,7 +55,7 @@ func (e *RpcError) Error() string {
 	return fmt.Sprintf("code: %d, message: %s", e.Code, e.Message)
 }
 
-func Call(ui ui.Screen, client httpclient.HttpClient, endpoint RpcEndpoint, method string, params []interface{}, resp RpcResponse) error {
+func Call(ui ui.Screen, client httpclient.HttpClient, endpoint Endpoint, method string, params []interface{}, resp RpcResponse) error {
 	payload, err := json.Marshal(&RpcRequest{
 		Id:      1,
 		Version: "2.0",

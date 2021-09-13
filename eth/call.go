@@ -12,6 +12,7 @@ import (
 	"github.com/jaanek/jeth/httpclient"
 	"github.com/jaanek/jeth/rpc"
 	"github.com/jaanek/jeth/ui"
+	"github.com/ledgerwatch/erigon/accounts/abi"
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/common/hexutil"
 	"github.com/ledgerwatch/erigon/common/math"
@@ -38,7 +39,22 @@ type CallUnpackedResult struct {
 	Value interface{} `json:"value"`
 }
 
-func CallMethodCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoint) error {
+func (r CallUnpackedResult) ToUint256() (*uint256.Int, error) {
+	if r.Type != "uint256" {
+		return nil, fmt.Errorf("Value type not uint256. Type: %v, value: %v: ", r.Type, r.Value)
+	}
+	big, ok := r.Value.(*big.Int)
+	if !ok {
+		return nil, fmt.Errorf("Value not *big.Int. Type: %v, value: %v: ", r.Type, r.Value)
+	}
+	val, overflow := uint256.FromBig(big)
+	if overflow {
+		return nil, fmt.Errorf("*big.Int to *uint256.Int overflow error. Type: %v, value: %v: ", r.Type, r.Value)
+	}
+	return val, nil
+}
+
+func CallMethodCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Endpoint) error {
 	// validate args
 	var fromAddr *common.Address
 	if ctx.IsSet(flags.FromParam.Name) {
@@ -87,7 +103,7 @@ func CallMethodCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoin
 	data := append(method.Id[:], packedValues...)
 
 	// call
-	result, err := CallMethod(term, endpoint, fromAddr, toAddr, value, data, "latest")
+	result, err := CallMethod(term, endpoint, fromAddr, toAddr, value, data, Latest)
 	if err != nil {
 		return err
 	}
@@ -96,7 +112,11 @@ func CallMethodCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoin
 	}
 	if ctx.IsSet(flags.OutputTypesParam.Name) {
 		typeNames := strings.Split(ctx.String(flags.OutputTypesParam.Name), ",")
-		results, err := UnpackCallResult(result, typeNames)
+		outTypes, err := AbiTypesFromStrings(typeNames)
+		if err != nil {
+			return err
+		}
+		results, err := UnpackCallResult(result, outTypes)
 		if err != nil {
 			term.Print(fmt.Sprintf("Could not unpack output param! Error: %v", err))
 		}
@@ -114,7 +134,7 @@ func CallMethodCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoin
 	return nil
 }
 
-func CallMethod(term ui.Screen, endpoint rpc.RpcEndpoint, from *common.Address, to common.Address, value *uint256.Int, data []byte, tag BlockPositionTag) ([]byte, error) {
+func CallMethod(term ui.Screen, endpoint rpc.Endpoint, from *common.Address, to common.Address, value *uint256.Int, data []byte, tag BlockPositionTag) ([]byte, error) {
 	param := CallMethodParam{
 		To:   to.Hex(),
 		Data: hexutil.Encode(data),
@@ -134,11 +154,7 @@ func CallMethod(term ui.Screen, endpoint rpc.RpcEndpoint, from *common.Address, 
 	return hexutil.Decode(resp.Result)
 }
 
-func UnpackCallResult(result []byte, typeNames []string) ([]CallUnpackedResult, error) {
-	outTypes, err := AbiTypesFromStrings(typeNames)
-	if err != nil {
-		return nil, err
-	}
+func UnpackCallResult(result []byte, outTypes abi.Arguments) ([]CallUnpackedResult, error) {
 	unpackedResults, err := outTypes.Unpack(result)
 	if err != nil {
 		return nil, err

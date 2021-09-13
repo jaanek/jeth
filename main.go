@@ -28,7 +28,7 @@ var (
 )
 
 type Command func(term ui.Screen, ctx *cli.Context) error
-type RpcCommand func(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoint) error
+type RpcCommand func(term ui.Screen, ctx *cli.Context, endpoint rpc.Endpoint) error
 
 func init() {
 	app.Flags = []cli.Flag{}

@@ -24,7 +24,7 @@ import (
 )
 
 type TransactionParams struct {
-	Endpoint       rpc.RpcEndpoint
+	Endpoint       rpc.Endpoint
 	ChainId        *uint256.Int
 	From           common.Address
 	To             *common.Address
@@ -53,7 +53,7 @@ type TransactionParamsOutput struct {
 	Balance        string `json:"balance"`
 }
 
-func TransactionParamsCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.RpcEndpoint) error {
+func TransactionParamsCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Endpoint) error {
 	// validate args
 	if !ctx.IsSet(flags.FromParam.Name) {
 		return errors.New(fmt.Sprintf("Missing from address --%s", flags.FromParam.Name))
@@ -211,7 +211,7 @@ func TransactionParamsCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Rpc
 	return nil
 }
 
-func GetTransactionParams(term ui.Screen, endpoint rpc.RpcEndpoint, from common.Address, to *common.Address, value *uint256.Int, data []byte, tag BlockPositionTag) (*TransactionParams, error) {
+func GetTransactionParams(term ui.Screen, endpoint rpc.Endpoint, from common.Address, to *common.Address, value *uint256.Int, data []byte, tag BlockPositionTag) (*TransactionParams, error) {
 	var wg sync.WaitGroup
 	var errs = make(chan error, 7)
 	var chainId, gasTip, gasPrice *uint256.Int
