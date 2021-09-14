@@ -189,9 +189,9 @@ func TransactionParamsCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.End
 		From:           p.From.Hex(),
 		Data:           hexutil.Encode(data),
 		GasPrice:       p.GasPrice.Hex(),
-		Gas:            strconv.FormatUint(*p.Gas, 16),
-		TxCount:        strconv.FormatUint(*p.TxCount, 16),
-		TxCountPending: strconv.FormatUint(*p.TxCountPending, 16),
+		Gas:            strconv.FormatUint(*p.Gas, 10),
+		TxCount:        strconv.FormatUint(*p.TxCount, 10),
+		TxCountPending: strconv.FormatUint(*p.TxCountPending, 10),
 		Balance:        p.Balance.Hex(),
 	}
 	if p.Value != nil {
