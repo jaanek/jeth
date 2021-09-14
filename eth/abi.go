@@ -143,7 +143,7 @@ type Method interface {
 	Inputs() abi.Arguments
 	Outputs() abi.Arguments
 	Send(from common.Address, to common.Address, value *uint256.Int, values []string, waitTime time.Duration, txSigner TxSigner) (string, *TxReceipt, error)
-	Call(from *common.Address, to common.Address, value *uint256.Int, values []string) ([]CallUnpackedResult, error)
+	Call(from *common.Address, to common.Address, value *uint256.Int, values []string) ([]byte, []CallUnpackedResult, error)
 }
 
 func NewMethod(term ui.Screen, endpoint rpc.Endpoint, methodName string, inputs []string, outputs []string) (Method, error) {
@@ -212,20 +212,20 @@ func (m *method) Send(from common.Address, to common.Address, value *uint256.Int
 	return hash, receipt, nil
 }
 
-func (m *method) Call(from *common.Address, to common.Address, value *uint256.Int, values []string) ([]CallUnpackedResult, error) {
+func (m *method) Call(from *common.Address, to common.Address, value *uint256.Int, values []string) ([]byte, []CallUnpackedResult, error) {
 	data, err := m.PackedCall(values)
 	if err != nil {
-		return nil, fmt.Errorf("Error while packing method call: %w", err)
+		return nil, nil, fmt.Errorf("Error while packing method call: %w", err)
 	}
 	result, err := CallMethod(m.term, m.endpoint, from, to, value, data, Latest)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	results, err := UnpackCallResult(result, m.outputs)
 	if err != nil {
 		m.term.Print(fmt.Sprintf("Could not unpack output param! Error: %v", err))
 	}
-	return results, nil
+	return result, results, nil
 }
 
 func Deploy(term ui.Screen, endpoint rpc.Endpoint, from common.Address, bin []byte, value *uint256.Int, typeNames []string, values []string, waitTime time.Duration, txSigner TxSigner) (string, *TxReceipt, error) {
