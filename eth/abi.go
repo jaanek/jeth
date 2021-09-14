@@ -18,7 +18,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-const ReceiptWaitTime = 120 * time.Second
+const ReceiptWaitTime = 240 * time.Second
 
 type HashedMethod struct {
 	Sig string
