@@ -8,11 +8,11 @@ import (
 	"strings"
 
 	"github.com/holiman/uint256"
+	"github.com/jaanek/jeth/abipack"
 	"github.com/jaanek/jeth/flags"
 	"github.com/jaanek/jeth/httpclient"
 	"github.com/jaanek/jeth/rpc"
 	"github.com/jaanek/jeth/ui"
-	"github.com/ledgerwatch/erigon/accounts/abi"
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/common/hexutil"
 	"github.com/ledgerwatch/erigon/common/math"
@@ -30,28 +30,8 @@ type CallMethodParam struct {
 }
 
 type CallOutput struct {
-	Result          string               `json:"result"`
-	UnpackedResults []CallUnpackedResult `json:"unpacked"`
-}
-
-type CallUnpackedResult struct {
-	Type  string      `json:"type"`
-	Value interface{} `json:"value"`
-}
-
-func (r CallUnpackedResult) ToUint256() (*uint256.Int, error) {
-	if r.Type != "uint256" {
-		return nil, fmt.Errorf("Value type not uint256. Type: %v, value: %v: ", r.Type, r.Value)
-	}
-	big, ok := r.Value.(*big.Int)
-	if !ok {
-		return nil, fmt.Errorf("Value not *big.Int. Type: %v, value: %v: ", r.Type, r.Value)
-	}
-	val, overflow := uint256.FromBig(big)
-	if overflow {
-		return nil, fmt.Errorf("*big.Int to *uint256.Int overflow error. Type: %v, value: %v: ", r.Type, r.Value)
-	}
-	return val, nil
+	Result          string                  `json:"result"`
+	UnpackedResults []abipack.UnpackedValue `json:"unpacked"`
 }
 
 func CallMethodCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Endpoint) error {
@@ -112,11 +92,11 @@ func CallMethodCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Endpoint) 
 	}
 	if ctx.IsSet(flags.OutputTypesParam.Name) {
 		typeNames := strings.Split(ctx.String(flags.OutputTypesParam.Name), ",")
-		outTypes, err := AbiTypesFromStrings(typeNames)
+		outTypes, err := abipack.AbiTypesFromStrings(typeNames)
 		if err != nil {
 			return err
 		}
-		results, err := UnpackCallResult(result, outTypes)
+		results, err := abipack.UnpackAbiData(outTypes, result)
 		if err != nil {
 			term.Print(fmt.Sprintf("Could not unpack output param! Error: %v", err))
 		}
@@ -152,20 +132,4 @@ func CallMethod(term ui.Screen, endpoint rpc.Endpoint, from *common.Address, to 
 		return nil, err
 	}
 	return hexutil.Decode(resp.Result)
-}
-
-func UnpackCallResult(result []byte, outTypes abi.Arguments) ([]CallUnpackedResult, error) {
-	unpackedResults, err := outTypes.Unpack(result)
-	if err != nil {
-		return nil, err
-	} else {
-		results := []CallUnpackedResult{}
-		for i, r := range unpackedResults {
-			results = append(results, CallUnpackedResult{
-				Type:  outTypes[i].Type.String(),
-				Value: r,
-			})
-		}
-		return results, nil
-	}
 }

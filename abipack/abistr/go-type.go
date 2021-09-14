@@ -1,4 +1,4 @@
-package abipack
+package abistr
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ import (
 func ToGoType(t abi.Type, input string) (interface{}, error) {
 	switch t.T {
 	case abi.TupleTy:
-		if isDynamicType(t) {
+		if IsDynamicType(t) {
 			// begin, err := tuplePointsTo(index, output)
 			// if err != nil {
 			// 	return nil, err
@@ -165,7 +165,7 @@ func forEachUnpack(t abi.Type, input string) (interface{}, error) {
 
 	// Arrays have packed elements, resulting in longer unpack steps.
 	// Slices have just 32 bytes per element (pointing to the contents).
-	// elemSize := getTypeSize(*t.Elem)
+	// elemSize := GetTypeSize(*t.Elem)
 	for i, arg := range args {
 		inter, err := ToGoType(*t.Elem, arg)
 		if err != nil {
@@ -191,7 +191,7 @@ func forTupleUnpack(t abi.Type, input string) (interface{}, error) {
 	}
 	for index, elem := range t.TupleElems {
 		marshalledValue, err := ToGoType(*elem, args[index])
-		if elem.T == abi.ArrayTy && !isDynamicType(*elem) {
+		if elem.T == abi.ArrayTy && !IsDynamicType(*elem) {
 			// If we have a static array, like [3]uint256, these are coded as
 			// just like uint256,uint256,uint256.
 			// This means that we need to add two 'virtual' arguments when
@@ -202,11 +202,11 @@ func forTupleUnpack(t abi.Type, input string) (interface{}, error) {
 			//
 			// Calculate the full array size to get the correct offset for the next argument.
 			// Decrement it by 1, as the normal index increment is still applied.
-			virtualArgs += getTypeSize(*elem)/32 - 1
-		} else if elem.T == abi.TupleTy && !isDynamicType(*elem) {
+			virtualArgs += GetTypeSize(*elem)/32 - 1
+		} else if elem.T == abi.TupleTy && !IsDynamicType(*elem) {
 			// If we have a static tuple, like (uint256, bool, uint256), these are
 			// coded as just like uint256,bool,uint256
-			virtualArgs += getTypeSize(*elem)/32 - 1
+			virtualArgs += GetTypeSize(*elem)/32 - 1
 		}
 		if err != nil {
 			return nil, err
