@@ -227,3 +227,40 @@ func (m *method) Call(from *common.Address, to common.Address, value *uint256.In
 	}
 	return results, nil
 }
+
+func Deploy(term ui.Screen, endpoint rpc.Endpoint, from common.Address, bin []byte, value *uint256.Int, typeNames []string, values []string, waitTime time.Duration, txSigner TxSigner) (string, *TxReceipt, error) {
+	argTypes, err := AbiTypesFromStrings(typeNames)
+	if err != nil {
+		return "", nil, err
+	}
+	packedValues, err := AbiPackValues(argTypes, values)
+	if err != nil {
+		return "", nil, err
+	}
+	data := append(bin, packedValues...)
+
+	// estimate params, gas etc.
+	params, err := GetTransactionParams(term, endpoint, from, nil, value, data, Latest)
+	if err != nil {
+		return "", nil, fmt.Errorf("Error while getting tx params for a method call: %w", err)
+	}
+
+	// get signed tx and send it
+	encoded, err := txSigner.GetSignedRawTx(*params.ChainId, *params.TxCount, from, nil, value, data, *params.Gas, params.GasPrice, params.GasTip, params.GasPrice)
+	hash, err := SendTransaction(term, endpoint, encoded)
+	if err != nil {
+		return "", nil, fmt.Errorf("Failed to send tx: %w", err)
+	}
+	// m.term.Print(fmt.Sprintf("Tx hash: %s", hash))
+
+	// wait for tx receipt
+	if waitTime < 0 {
+		waitTime = ReceiptWaitTime
+	}
+	c, _ := context.WithTimeout(context.Background(), waitTime)
+	receipt, err := WaitTransactionReceipt(c, term, endpoint, hash)
+	if err != nil {
+		return hash, nil, err
+	}
+	return hash, receipt, nil
+}
