@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-package abipack
+package abi
 
 import (
 	"encoding/binary"
@@ -22,8 +22,6 @@ import (
 	"math/big"
 	"reflect"
 
-	"github.com/jaanek/jeth/abipack/abistr"
-	"github.com/ledgerwatch/erigon/accounts/abi"
 	"github.com/ledgerwatch/erigon/common"
 )
 
@@ -36,7 +34,7 @@ var (
 
 // toGoType parses the output bytes and recursively assigns the value of these bytes
 // into a go type with accordance with the ABI spec.
-func toGoType(index int, t abi.Type, output []byte) (interface{}, error) {
+func toGoType(index int, t Type, output []byte) (interface{}, error) {
 	if index+32 > len(output) {
 		return nil, fmt.Errorf("abi: cannot marshal in to go type: length insufficient %d require %d", len(output), index+32)
 	}
@@ -48,7 +46,7 @@ func toGoType(index int, t abi.Type, output []byte) (interface{}, error) {
 	)
 
 	// if we require a length prefix, find the beginning word and size returned.
-	if abistr.RequiresLengthPrefix(t) {
+	if t.requiresLengthPrefix() {
 		begin, length, err = lengthPrefixPointsTo(index, output)
 		if err != nil {
 			return nil, err
@@ -58,8 +56,8 @@ func toGoType(index int, t abi.Type, output []byte) (interface{}, error) {
 	}
 
 	switch t.T {
-	case abi.TupleTy:
-		if abistr.IsDynamicType(t) {
+	case TupleTy:
+		if isDynamicType(t) {
 			begin, err := tuplePointsTo(index, output)
 			if err != nil {
 				return nil, err
@@ -67,10 +65,10 @@ func toGoType(index int, t abi.Type, output []byte) (interface{}, error) {
 			return forTupleUnpack(t, output[begin:])
 		}
 		return forTupleUnpack(t, output[index:])
-	case abi.SliceTy:
+	case SliceTy:
 		return forEachUnpack(t, output[begin:], 0, length)
-	case abi.ArrayTy:
-		if abistr.IsDynamicType(*t.Elem) {
+	case ArrayTy:
+		if isDynamicType(*t.Elem) {
 			offset := binary.BigEndian.Uint64(returnOutput[len(returnOutput)-8:])
 			if offset > uint64(len(output)) {
 				return nil, fmt.Errorf("abi: toGoType offset greater than output length: offset: %d, len(output): %d", offset, len(output))
@@ -78,21 +76,21 @@ func toGoType(index int, t abi.Type, output []byte) (interface{}, error) {
 			return forEachUnpack(t, output[offset:], 0, t.Size)
 		}
 		return forEachUnpack(t, output[index:], 0, t.Size)
-	case abi.StringTy: // variable arrays are written at the end of the return bytes
+	case StringTy: // variable arrays are written at the end of the return bytes
 		return string(output[begin : begin+length]), nil
-	case abi.IntTy, abi.UintTy:
+	case IntTy, UintTy:
 		return ReadInteger(t, returnOutput), nil
-	case abi.BoolTy:
+	case BoolTy:
 		return readBool(returnOutput)
-	case abi.AddressTy:
+	case AddressTy:
 		return common.BytesToAddress(returnOutput), nil
-	case abi.HashTy:
+	case HashTy:
 		return common.BytesToHash(returnOutput), nil
-	case abi.BytesTy:
+	case BytesTy:
 		return output[begin : begin+length], nil
-	case abi.FixedBytesTy:
+	case FixedBytesTy:
 		return ReadFixedBytes(t, returnOutput)
-	case abi.FunctionTy:
+	case FunctionTy:
 		return readFunctionType(t, returnOutput)
 	default:
 		return nil, fmt.Errorf("abi: unknown type %v", t.T)
@@ -100,8 +98,8 @@ func toGoType(index int, t abi.Type, output []byte) (interface{}, error) {
 }
 
 // ReadInteger reads the integer based on its kind and returns the appropriate value.
-func ReadInteger(typ abi.Type, b []byte) interface{} {
-	if typ.T == abi.UintTy {
+func ReadInteger(typ Type, b []byte) interface{} {
+	if typ.T == UintTy {
 		switch typ.Size {
 		case 8:
 			return b[len(b)-1]
@@ -124,6 +122,7 @@ func ReadInteger(typ abi.Type, b []byte) interface{} {
 	case 32:
 		return int32(binary.BigEndian.Uint32(b[len(b)-4:]))
 	case 64:
+		fmt.Printf("*** reading int64: %v\n", b[len(b)-8:])
 		return int64(binary.BigEndian.Uint64(b[len(b)-8:]))
 	default:
 		// the only case left for integer is int256
@@ -160,8 +159,8 @@ func readBool(word []byte) (bool, error) {
 // A function type is simply the address with the function selection signature at the end.
 //
 // readFunctionType enforces that standard by always presenting it as a 24-array (address + sig = 24 bytes)
-func readFunctionType(t abi.Type, word []byte) (funcTy [24]byte, err error) {
-	if t.T != abi.FunctionTy {
+func readFunctionType(t Type, word []byte) (funcTy [24]byte, err error) {
+	if t.T != FunctionTy {
 		return [24]byte{}, fmt.Errorf("abi: invalid type in call to make function type byte array")
 	}
 	if garbage := binary.BigEndian.Uint64(word[24:32]); garbage != 0 {
@@ -173,8 +172,8 @@ func readFunctionType(t abi.Type, word []byte) (funcTy [24]byte, err error) {
 }
 
 // ReadFixedBytes uses reflection to create a fixed array to be read from.
-func ReadFixedBytes(t abi.Type, word []byte) (interface{}, error) {
-	if t.T != abi.FixedBytesTy {
+func ReadFixedBytes(t Type, word []byte) (interface{}, error) {
+	if t.T != FixedBytesTy {
 		return nil, fmt.Errorf("abi: invalid type in call to make fixed byte array")
 	}
 	// convert
@@ -186,7 +185,7 @@ func ReadFixedBytes(t abi.Type, word []byte) (interface{}, error) {
 }
 
 // forEachUnpack iteratively unpack elements.
-func forEachUnpack(t abi.Type, output []byte, start, size int) (interface{}, error) {
+func forEachUnpack(t Type, output []byte, start, size int) (interface{}, error) {
 	if size < 0 {
 		return nil, fmt.Errorf("cannot marshal input to array, size is negative (%d)", size)
 	}
@@ -197,10 +196,10 @@ func forEachUnpack(t abi.Type, output []byte, start, size int) (interface{}, err
 	// this value will become our slice or our array, depending on the type
 	var refSlice reflect.Value
 
-	if t.T == abi.SliceTy {
+	if t.T == SliceTy {
 		// declare our slice
 		refSlice = reflect.MakeSlice(t.GetType(), size, size)
-	} else if t.T == abi.ArrayTy {
+	} else if t.T == ArrayTy {
 		// declare our array
 		refSlice = reflect.New(t.GetType()).Elem()
 	} else {
@@ -209,7 +208,7 @@ func forEachUnpack(t abi.Type, output []byte, start, size int) (interface{}, err
 
 	// Arrays have packed elements, resulting in longer unpack steps.
 	// Slices have just 32 bytes per element (pointing to the contents).
-	elemSize := abistr.GetTypeSize(*t.Elem)
+	elemSize := getTypeSize(*t.Elem)
 
 	for i, j := start, 0; j < size; i, j = i+elemSize, j+1 {
 		inter, err := toGoType(i, *t.Elem, output)
@@ -225,12 +224,12 @@ func forEachUnpack(t abi.Type, output []byte, start, size int) (interface{}, err
 	return refSlice.Interface(), nil
 }
 
-func forTupleUnpack(t abi.Type, output []byte) (interface{}, error) {
+func forTupleUnpack(t Type, output []byte) (interface{}, error) {
 	retval := reflect.New(t.GetType()).Elem()
 	virtualArgs := 0
 	for index, elem := range t.TupleElems {
 		marshalledValue, err := toGoType((index+virtualArgs)*32, *elem, output)
-		if elem.T == abi.ArrayTy && !abistr.IsDynamicType(*elem) {
+		if elem.T == ArrayTy && !isDynamicType(*elem) {
 			// If we have a static array, like [3]uint256, these are coded as
 			// just like uint256,uint256,uint256.
 			// This means that we need to add two 'virtual' arguments when
@@ -241,11 +240,11 @@ func forTupleUnpack(t abi.Type, output []byte) (interface{}, error) {
 			//
 			// Calculate the full array size to get the correct offset for the next argument.
 			// Decrement it by 1, as the normal index increment is still applied.
-			virtualArgs += abistr.GetTypeSize(*elem)/32 - 1
-		} else if elem.T == abi.TupleTy && !abistr.IsDynamicType(*elem) {
+			virtualArgs += getTypeSize(*elem)/32 - 1
+		} else if elem.T == TupleTy && !isDynamicType(*elem) {
 			// If we have a static tuple, like (uint256, bool, uint256), these are
 			// coded as just like uint256,bool,uint256
-			virtualArgs += abistr.GetTypeSize(*elem)/32 - 1
+			virtualArgs += getTypeSize(*elem)/32 - 1
 		}
 		if err != nil {
 			return nil, err

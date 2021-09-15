@@ -12,11 +12,10 @@ import (
 	"sync"
 
 	"github.com/holiman/uint256"
-	"github.com/jaanek/jeth/abipack"
+	"github.com/jaanek/jeth/abi"
 	"github.com/jaanek/jeth/flags"
 	"github.com/jaanek/jeth/rpc"
 	"github.com/jaanek/jeth/ui"
-	"github.com/ledgerwatch/erigon/accounts/abi"
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/common/hexutil"
 	"github.com/ledgerwatch/erigon/common/math"
@@ -316,7 +315,7 @@ func GetTransactionParams(term ui.Screen, endpoint rpc.Endpoint, from common.Add
 }
 
 func abiPackedValuesFromCli(ctx *cli.Context, typeNames []string) (abi.Arguments, []byte, error) {
-	argTypes, err := abipack.AbiTypesFromStrings(typeNames)
+	argTypes, err := abi.AbiTypesFromStrings(typeNames)
 	if err != nil {
 		return nil, nil, err
 	}

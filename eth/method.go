@@ -7,16 +7,21 @@ import (
 	"time"
 
 	"github.com/holiman/uint256"
-	"github.com/jaanek/jeth/abipack"
+	"github.com/jaanek/jeth/abi"
 	"github.com/jaanek/jeth/rpc"
 	"github.com/jaanek/jeth/ui"
-	"github.com/ledgerwatch/erigon/accounts/abi"
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/crypto"
 )
 
+type MethodSpec struct {
+	Name    string
+	Inputs  []string
+	Outputs []string
+}
+
 func AbiPackedMethodCall(methodName string, types []string, values []string) ([]byte, error) {
-	argTypes, err := abipack.AbiTypesFromStrings(types)
+	argTypes, err := abi.AbiTypesFromStrings(types)
 	if err != nil {
 		return nil, err
 	}
@@ -72,15 +77,15 @@ type Method interface {
 	Inputs() abi.Arguments
 	Outputs() abi.Arguments
 	Send(from common.Address, to common.Address, value *uint256.Int, values []string, waitTime time.Duration, txSigner TxSigner) (string, *TxReceipt, error)
-	Call(from *common.Address, to common.Address, value *uint256.Int, values []string) ([]byte, []abipack.UnpackedValue, error)
+	Call(from *common.Address, to common.Address, value *uint256.Int, values []string) ([]byte, []abi.UnpackedValue, error)
 }
 
 func NewMethod(term ui.Screen, endpoint rpc.Endpoint, methodName string, inputs []string, outputs []string) (Method, error) {
-	argTypes, err := abipack.AbiTypesFromStrings(inputs)
+	argTypes, err := abi.AbiTypesFromStrings(inputs)
 	if err != nil {
 		return nil, err
 	}
-	outTypes, err := abipack.AbiTypesFromStrings(outputs)
+	outTypes, err := abi.AbiTypesFromStrings(outputs)
 	if err != nil {
 		return nil, err
 	}
@@ -103,8 +108,8 @@ func (m *method) PackedCall(values []string) ([]byte, error) {
 	return append(m.method.Id[:], packedValues...), nil
 }
 
-func (m *method) UnpackResult(result []byte) ([]abipack.UnpackedValue, error) {
-	return abipack.UnpackAbiData(m.outputs, result)
+func (m *method) UnpackResult(result []byte) ([]abi.UnpackedValue, error) {
+	return abi.UnpackAbiData(m.outputs, result)
 }
 
 type GetSignedTxCallback = func(term ui.Screen, chainID uint256.Int, nonce uint64, from common.Address, to *common.Address, value *uint256.Int, input []byte, gasLimit uint64, gasPrice, gasTip, gasFeeCap *uint256.Int) ([]byte, error)
@@ -141,7 +146,7 @@ func (m *method) Send(from common.Address, to common.Address, value *uint256.Int
 	return hash, receipt, nil
 }
 
-func (m *method) Call(from *common.Address, to common.Address, value *uint256.Int, values []string) ([]byte, []abipack.UnpackedValue, error) {
+func (m *method) Call(from *common.Address, to common.Address, value *uint256.Int, values []string) ([]byte, []abi.UnpackedValue, error) {
 	data, err := m.PackedCall(values)
 	if err != nil {
 		return nil, nil, fmt.Errorf("Error while packing method call: %w", err)
@@ -150,7 +155,7 @@ func (m *method) Call(from *common.Address, to common.Address, value *uint256.In
 	if err != nil {
 		return nil, nil, err
 	}
-	results, err := abipack.UnpackAbiData(m.outputs, result)
+	results, err := abi.UnpackAbiData(m.outputs, result)
 	if err != nil {
 		m.term.Print(fmt.Sprintf("Could not unpack output param! Error: %v", err))
 	}

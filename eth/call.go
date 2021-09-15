@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/holiman/uint256"
-	"github.com/jaanek/jeth/abipack"
+	"github.com/jaanek/jeth/abi"
 	"github.com/jaanek/jeth/flags"
 	"github.com/jaanek/jeth/httpclient"
 	"github.com/jaanek/jeth/rpc"
@@ -30,8 +30,8 @@ type CallMethodParam struct {
 }
 
 type CallOutput struct {
-	Result          string                  `json:"result"`
-	UnpackedResults []abipack.UnpackedValue `json:"unpacked"`
+	Result          string              `json:"result"`
+	UnpackedResults []abi.UnpackedValue `json:"unpacked"`
 }
 
 func CallMethodCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Endpoint) error {
@@ -92,11 +92,11 @@ func CallMethodCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Endpoint) 
 	}
 	if ctx.IsSet(flags.OutputTypesParam.Name) {
 		typeNames := strings.Split(ctx.String(flags.OutputTypesParam.Name), ",")
-		outTypes, err := abipack.AbiTypesFromStrings(typeNames)
+		outTypes, err := abi.AbiTypesFromStrings(typeNames)
 		if err != nil {
 			return err
 		}
-		results, err := abipack.UnpackAbiData(outTypes, result)
+		results, err := abi.UnpackAbiData(outTypes, result)
 		if err != nil {
 			term.Print(fmt.Sprintf("Could not unpack output param! Error: %v", err))
 		}

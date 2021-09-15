@@ -1,11 +1,10 @@
-package abipack
+package abi
 
 import (
 	"fmt"
 	"math/big"
 
 	"github.com/holiman/uint256"
-	"github.com/ledgerwatch/erigon/accounts/abi"
 )
 
 // abi, err := abi.JSON(strings.NewReader(abis[i]))
@@ -30,7 +29,7 @@ func (r UnpackedValue) ToUint256() (*uint256.Int, error) {
 	return val, nil
 }
 
-func UnpackAbiData(outTypes abi.Arguments, result []byte) ([]UnpackedValue, error) {
+func UnpackAbiData(outTypes Arguments, result []byte) ([]UnpackedValue, error) {
 	results := []UnpackedValue{}
 	err := UnpackAbiDataWithSetter(outTypes, result, func(i int, r interface{}) {
 		results = append(results, UnpackedValue{
@@ -41,7 +40,7 @@ func UnpackAbiData(outTypes abi.Arguments, result []byte) ([]UnpackedValue, erro
 	return results, err
 }
 
-func UnpackAbiDataWithSetter(outTypes abi.Arguments, result []byte, setter func(int, interface{})) error {
+func UnpackAbiDataWithSetter(outTypes Arguments, result []byte, setter func(int, interface{})) error {
 	unpackedResults, err := outTypes.Unpack(result)
 	if err != nil {
 		return err
@@ -53,20 +52,18 @@ func UnpackAbiDataWithSetter(outTypes abi.Arguments, result []byte, setter func(
 	return nil
 }
 
-func AbiTypesFromStrings(typeNames []string) (abi.Arguments, error) {
-	var argTypes = make([]abi.Argument, 0, len(typeNames))
+func AbiTypesFromStrings(typeNames []string) (Arguments, error) {
+	var argTypes = make([]Argument, 0, len(typeNames))
 	for _, argTypeName := range typeNames {
 		if len(argTypeName) == 0 {
 			continue
 		}
-		argType, err := abi.NewType(argTypeName, "", nil) // example: "uint256"
+		argType, err := NewType(argTypeName, "", nil) // example: "uint256"
 		if err != nil {
 			return nil, fmt.Errorf("argument contains invalid type: %s. Error: %w", argTypeName, err)
 		}
-		arg := abi.Argument{
-			Name:    "", // in method calls not used
-			Type:    argType,
-			Indexed: false, // in method calls not used
+		arg := Argument{
+			Type: argType,
 		}
 		argTypes = append(argTypes, arg)
 	}

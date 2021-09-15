@@ -8,11 +8,9 @@ import (
 	"time"
 
 	"github.com/holiman/uint256"
-	"github.com/jaanek/jeth/abipack"
-	"github.com/jaanek/jeth/abipack/abistr"
+	"github.com/jaanek/jeth/abi"
 	"github.com/jaanek/jeth/rpc"
 	"github.com/jaanek/jeth/ui"
-	"github.com/ledgerwatch/erigon/accounts/abi"
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/urfave/cli"
 )
@@ -43,7 +41,7 @@ func AbiValuesFromTypes(inputs abi.Arguments, values []string) ([]interface{}, e
 	params := []interface{}{}
 	for i, input := range inputs {
 		arg := values[i]
-		param, err := abistr.ToGoType(input.Type, arg)
+		param, err := abi.ToGoTypeFromStr(input.Type, arg)
 		if err != nil {
 			return nil, err
 		}
@@ -66,7 +64,7 @@ func AbiValuesFromCli(ctx *cli.Context, inputs abi.Arguments) ([]string, error) 
 }
 
 func Deploy(term ui.Screen, endpoint rpc.Endpoint, from common.Address, bin []byte, value *uint256.Int, typeNames []string, values []string, waitTime time.Duration, txSigner TxSigner) (string, *TxReceipt, error) {
-	argTypes, err := abipack.AbiTypesFromStrings(typeNames)
+	argTypes, err := abi.AbiTypesFromStrings(typeNames)
 	if err != nil {
 		return "", nil, err
 	}
