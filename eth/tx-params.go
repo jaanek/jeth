@@ -45,6 +45,7 @@ type TransactionParamsOutput struct {
 	To             string `json:"to"`
 	Value          string `json:"value"`
 	Data           string `json:"data"`
+	Method         string `json:"method"`
 	GasTip         string `json:"gasTip,omitempty"`
 	GasPrice       string `json:"gasPrice"`
 	Gas            string `json:"gas"`
@@ -188,6 +189,7 @@ func TransactionParamsCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.End
 		ChainId:        p.ChainId.Hex(),
 		From:           p.From.Hex(),
 		Data:           hexutil.Encode(data),
+		Method:         ctx.String(flags.MethodParam.Name),
 		GasPrice:       p.GasPrice.Hex(),
 		Gas:            strconv.FormatUint(*p.Gas, 10),
 		TxCount:        strconv.FormatUint(*p.TxCount, 10),
