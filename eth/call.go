@@ -92,7 +92,7 @@ func CallMethodCommand(term ui.Screen, ctx *cli.Context, endpoint rpc.Endpoint) 
 	}
 	if ctx.IsSet(flags.OutputTypesParam.Name) {
 		typeNames := strings.Split(ctx.String(flags.OutputTypesParam.Name), ",")
-		outTypes, err := abi.AbiTypesFromStrings(typeNames)
+		outTypes, err := abi.TypesFromStrings(typeNames)
 		if err != nil {
 			return err
 		}

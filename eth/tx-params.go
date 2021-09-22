@@ -317,14 +317,14 @@ func GetTransactionParams(term ui.Screen, endpoint rpc.Endpoint, from common.Add
 }
 
 func abiPackedValuesFromCli(ctx *cli.Context, typeNames []string) (abi.Arguments, []byte, error) {
-	argTypes, err := abi.AbiTypesFromStrings(typeNames)
+	argTypes, err := abi.TypesFromStrings(typeNames)
 	if err != nil {
 		return nil, nil, err
 	}
-	argValues, err := AbiValuesFromCli(ctx, argTypes)
+	argValues, err := abi.ValuesFromCli(ctx, argTypes)
 	if err != nil {
 		return nil, nil, err
 	}
-	packedValues, err := AbiPackValues(argTypes, argValues)
+	packedValues, err := abi.PackValues(argTypes, argValues)
 	return argTypes, packedValues, err
 }

@@ -21,11 +21,11 @@ type MethodSpec struct {
 }
 
 func AbiPackedMethodCall(methodName string, types []string, values []string) ([]byte, error) {
-	argTypes, err := abi.AbiTypesFromStrings(types)
+	argTypes, err := abi.TypesFromStrings(types)
 	if err != nil {
 		return nil, err
 	}
-	packedValues, err := AbiPackValues(argTypes, values)
+	packedValues, err := abi.PackValues(argTypes, values)
 	if err != nil {
 		return nil, err
 	}
@@ -81,11 +81,11 @@ type Method interface {
 }
 
 func NewMethod(term ui.Screen, endpoint rpc.Endpoint, methodName string, inputs []string, outputs []string) (Method, error) {
-	argTypes, err := abi.AbiTypesFromStrings(inputs)
+	argTypes, err := abi.TypesFromStrings(inputs)
 	if err != nil {
 		return nil, err
 	}
-	outTypes, err := abi.AbiTypesFromStrings(outputs)
+	outTypes, err := abi.TypesFromStrings(outputs)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func NewMethod(term ui.Screen, endpoint rpc.Endpoint, methodName string, inputs 
 }
 
 func (m *method) PackedCall(values []string) ([]byte, error) {
-	packedValues, err := AbiPackValues(m.inputs, values)
+	packedValues, err := abi.PackValues(m.inputs, values)
 	if err != nil {
 		return nil, err
 	}

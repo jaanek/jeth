@@ -60,11 +60,11 @@ type Event interface {
 }
 
 func NewEvent(eventName string, topicTypes []string, dataTypes []string) (Event, error) {
-	topicArgs, err := abi.AbiTypesFromStrings(topicTypes)
+	topicArgs, err := abi.TypesFromStrings(topicTypes)
 	if err != nil {
 		return nil, err
 	}
-	dataArgs, err := abi.AbiTypesFromStrings(dataTypes)
+	dataArgs, err := abi.TypesFromStrings(dataTypes)
 	if err != nil {
 		return nil, err
 	}

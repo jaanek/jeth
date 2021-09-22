@@ -2,9 +2,7 @@ package eth
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/holiman/uint256"
@@ -12,7 +10,6 @@ import (
 	"github.com/jaanek/jeth/rpc"
 	"github.com/jaanek/jeth/ui"
 	"github.com/ledgerwatch/erigon/common"
-	"github.com/urfave/cli"
 )
 
 const ReceiptWaitTime = 240 * time.Second
@@ -21,54 +18,12 @@ type TxSigner interface {
 	GetSignedRawTx(chainID uint256.Int, nonce uint64, from common.Address, to *common.Address, value *uint256.Int, input []byte, gasLimit uint64, gasPrice, gasTip, gasFeeCap *uint256.Int) ([]byte, error)
 }
 
-func AbiPackValues(argTypes abi.Arguments, argValues []string) ([]byte, error) {
-	values, err := AbiValuesFromTypes(argTypes, argValues)
-	if err != nil {
-		return nil, err
-	}
-	packedValues, err := argTypes.Pack(values...)
-	if err != nil {
-		return nil, err
-	}
-	return packedValues, nil
-}
-
-// parse provided method parameters against their types
-func AbiValuesFromTypes(inputs abi.Arguments, values []string) ([]interface{}, error) {
-	if len(values) != len(inputs) {
-		return nil, errors.New("abi arg type's len != values len")
-	}
-	params := []interface{}{}
-	for i, input := range inputs {
-		arg := values[i]
-		param, err := abi.ToGoTypeFromStr(input.Type, arg)
-		if err != nil {
-			return nil, err
-		}
-		params = append(params, param)
-	}
-	return params, nil
-}
-
-func AbiValuesFromCli(ctx *cli.Context, inputs abi.Arguments) ([]string, error) {
-	values := []string{}
-	for i := range inputs {
-		argNum := strconv.FormatInt(int64(i), 10)
-		if !ctx.IsSet(argNum) {
-			return nil, fmt.Errorf("argument --%s not set", argNum)
-		}
-		arg := ctx.String(argNum)
-		values = append(values, arg)
-	}
-	return values, nil
-}
-
 func Deploy(term ui.Screen, endpoint rpc.Endpoint, from common.Address, bin []byte, value *uint256.Int, typeNames []string, values []string, waitTime time.Duration, txSigner TxSigner) (string, *TxReceipt, error) {
-	argTypes, err := abi.AbiTypesFromStrings(typeNames)
+	argTypes, err := abi.TypesFromStrings(typeNames)
 	if err != nil {
 		return "", nil, err
 	}
-	packedValues, err := AbiPackValues(argTypes, values)
+	packedValues, err := abi.PackValues(argTypes, values)
 	if err != nil {
 		return "", nil, err
 	}
@@ -98,6 +53,10 @@ func Deploy(term ui.Screen, endpoint rpc.Endpoint, from common.Address, bin []by
 		return hash, nil, err
 	}
 	return hash, receipt, nil
+}
+
+func SendValue(term ui.Screen, endpoint rpc.Endpoint, from common.Address, to common.Address, value *uint256.Int, waitTime time.Duration, txSigner TxSigner) (string, *TxReceipt, error) {
+	return Send(term, endpoint, from, to, value, []byte{}, waitTime, txSigner)
 }
 
 func Send(term ui.Screen, endpoint rpc.Endpoint, from common.Address, to common.Address, value *uint256.Int, data []byte, waitTime time.Duration, txSigner TxSigner) (string, *TxReceipt, error) {
