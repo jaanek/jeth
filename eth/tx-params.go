@@ -321,10 +321,23 @@ func abiPackedValuesFromCli(ctx *cli.Context, typeNames []string) (abi.Arguments
 	if err != nil {
 		return nil, nil, err
 	}
-	argValues, err := abi.ValuesFromCli(ctx, argTypes)
+	argValues, err := ValuesFromCli(ctx, argTypes)
 	if err != nil {
 		return nil, nil, err
 	}
 	packedValues, err := abi.PackValues(argTypes, argValues)
 	return argTypes, packedValues, err
+}
+
+func ValuesFromCli(ctx *cli.Context, inputs abi.Arguments) ([]string, error) {
+	values := []string{}
+	for i := range inputs {
+		argNum := strconv.FormatInt(int64(i), 10)
+		if !ctx.IsSet(argNum) {
+			return nil, fmt.Errorf("argument --%s not set", argNum)
+		}
+		arg := ctx.String(argNum)
+		values = append(values, arg)
+	}
+	return values, nil
 }

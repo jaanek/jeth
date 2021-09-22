@@ -4,10 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"strconv"
 
 	"github.com/holiman/uint256"
-	"github.com/urfave/cli"
 )
 
 // abi, err := abi.JSON(strings.NewReader(abis[i]))
@@ -59,19 +57,6 @@ func ValuesFromTypes(inputs Arguments, values []string) ([]interface{}, error) {
 		params = append(params, param)
 	}
 	return params, nil
-}
-
-func ValuesFromCli(ctx *cli.Context, inputs Arguments) ([]string, error) {
-	values := []string{}
-	for i := range inputs {
-		argNum := strconv.FormatInt(int64(i), 10)
-		if !ctx.IsSet(argNum) {
-			return nil, fmt.Errorf("argument --%s not set", argNum)
-		}
-		arg := ctx.String(argNum)
-		values = append(values, arg)
-	}
-	return values, nil
 }
 
 func UnpackAbiData(outTypes Arguments, result []byte) ([]UnpackedValue, error) {
